@@ -1,0 +1,26 @@
+# Git
+.git
+.gitignore
+
+# IntelliJ
+.idea
+*.iml
+
+# Gradle
+.gradle
+build/
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.*
+
+# Documentation
+README.md
+HELP.md
