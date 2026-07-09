@@ -2,6 +2,7 @@ package io.oneasset;
 
 import io.oneasset.adapter.outbound.apikey.persistence.ApiKeyJpaRepository;
 import io.oneasset.adapter.outbound.asset.persistence.AssetJpaRepository;
+import io.oneasset.adapter.outbound.assetvariant.persistence.AssetVariantJpaRepository;
 import io.oneasset.adapter.outbound.project.persistence.ProjectJpaRepository;
 import io.oneasset.adapter.outbound.projectmember.persistence.ProjectMemberJpaRepository;
 import io.oneasset.adapter.outbound.user.persistence.UserJpaRepository;
@@ -19,6 +20,8 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 class OneassetApiApplicationTests {
 
   @MockitoBean private AssetJpaRepository assetJpaRepository;
+
+  @MockitoBean private AssetVariantJpaRepository assetVariantJpaRepository;
 
   @MockitoBean private ApiKeyJpaRepository apiKeyJpaRepository;
 
