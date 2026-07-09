@@ -1,5 +1,7 @@
 package io.oneasset.domain.user.model;
 
+import static io.oneasset.domain.common.DomainValidator.requireText;
+
 import io.oneasset.domain.user.vo.UserId;
 import io.oneasset.domain.user.vo.UserStatus;
 import java.time.LocalDateTime;
@@ -88,12 +90,5 @@ public final class User {
     if (!isActive()) {
       throw new IllegalStateException(message);
     }
-  }
-
-  private static String requireText(String value, String fieldName) {
-    if (value == null || value.isBlank()) {
-      throw new IllegalArgumentException(fieldName + " must not be blank");
-    }
-    return value;
   }
 }

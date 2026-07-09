@@ -42,6 +42,7 @@ io.oneasset
 - JPA Entity는 persistence adapter에 둔다.
 - JPA Entity는 DB 매핑과 ORM 요구사항을 담당한다.
 - 도메인 모델은 상태 전이와 불변식을 담당한다.
+- DB에서 읽은 값을 도메인 모델로 복원할 때는 `reconstitute(...)` 같은 명시적 팩토리를 사용한다.
 
 ## 허용 의존성
 
@@ -52,6 +53,8 @@ domain -> Java standard library only
 ```
 
 역방향 의존이 필요하면 port 인터페이스로 끊는다.
+
+Lombok 같은 컴파일 타임 보일러플레이트 도구는 도메인 모델에서 제한적으로 사용할 수 있다. 단, 도메인 모델이 Spring, JPA, AWS SDK 타입에 의존하면 안 된다.
 
 ## 업데이트 시점
 
