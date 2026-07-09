@@ -19,6 +19,38 @@ Project 도메인 자체의 책임은 MVP1에서 얇게 유지한다.
 
 Project 생성 시 owner ProjectMember 생성은 별도 유스케이스에서 함께 조합한다.
 
+## ProjectMember
+
+MVP1에서 ProjectMember는 별도 도메인 모델로 둔다.
+
+```text
+ProjectMember
+- id
+- projectId
+- userId
+- role
+- createdAt
+```
+
+role은 문자열이 아니라 enum으로 관리한다.
+
+```text
+OWNER
+MEMBER
+```
+
+MVP1에서는 프로젝트 생성자에게 `OWNER`를 부여한다. 초대/협업 기능이 아직 없더라도 `MEMBER`는 후속 확장을 위해 enum에 포함한다.
+
+role 변경 메서드는 지금 넣지 않는다. 마지막 owner 보호, 자기 자신 role 변경, member 권한 상승 같은 정책은 ProjectMember 단독으로 판단하기 어렵고, 프로젝트 전체 멤버 목록과 application 계층 권한 검사가 필요하기 때문이다.
+
+현재 책임 메서드는 다음으로 제한한다.
+
+- `createOwner(projectId, userId)`
+- `createMember(projectId, userId)`
+- `reconstitute(...)`
+- `isOwner()`
+- `isMember()`
+
 ## Slug
 
 slug는 사람이 읽을 수 있고 URL이나 외부 식별에 쓰기 좋은 안전한 문자열이다.

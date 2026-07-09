@@ -10,6 +10,7 @@ DB 무결성 제약과 조회 인덱스를 기록한다.
 | --- | --- | --- |
 | `users` | `cognito_sub` unique | Cognito 사용자와 local User 1:1 매핑 |
 | `projects` | `slug` unique | 프로젝트 slug 충돌 방지 |
+| `project_members` | `(project_id, user_id)` unique | 같은 유저가 같은 프로젝트에 중복 가입되는 것을 방지 |
 | `api_keys` | `key_hash` unique | raw key 검증 결과 중복 방지 |
 | `assets` | `storage_key` unique | S3 object와 metadata 매핑 |
 | `asset_variants` | `storage_key` unique | 변환본 object 중복 방지 |
