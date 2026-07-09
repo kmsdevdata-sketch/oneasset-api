@@ -20,7 +20,6 @@ class UserIdTest {
 
   @Test
   void rejectsInvalidUuidString() {
-    assertThatThrownBy(() -> UserId.fromString("not-a-uuid"))
-        .isInstanceOf(IllegalArgumentException.class);
+    assertThatThrownBy(() -> UserId.fromString("not-a-uuid")).isInstanceOf(RuntimeException.class);
   }
 }

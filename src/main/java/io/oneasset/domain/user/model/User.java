@@ -2,10 +2,9 @@ package io.oneasset.domain.user.model;
 
 import io.oneasset.domain.user.vo.UserId;
 import io.oneasset.domain.user.vo.UserStatus;
-import lombok.Getter;
-
 import java.time.LocalDateTime;
 import java.util.Objects;
+import lombok.Getter;
 
 @Getter
 public final class User {
