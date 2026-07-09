@@ -14,6 +14,7 @@ OneAsset DB 테이블과 컬럼을 기록한다.
 | `cognito_sub` | varchar | UNIQUE, NOT NULL | Cognito subject |
 | `email` | varchar | NOT NULL | email claim |
 | `name` | varchar | NOT NULL | name claim |
+| `role` | varchar | NOT NULL | `USER`, `ADMIN` |
 | `status` | varchar | NOT NULL | `ACTIVE`, `WITHDRAWN`, `BANNED` |
 | `created_at` | timestamptz | NOT NULL | 생성 시각 |
 | `updated_at` | timestamptz | NOT NULL | 수정 시각 |

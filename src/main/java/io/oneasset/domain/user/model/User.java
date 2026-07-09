@@ -3,6 +3,7 @@ package io.oneasset.domain.user.model;
 import static io.oneasset.domain.common.DomainValidator.requireText;
 
 import io.oneasset.domain.user.vo.UserId;
+import io.oneasset.domain.user.vo.UserRole;
 import io.oneasset.domain.user.vo.UserStatus;
 import java.time.LocalDateTime;
 import java.util.Objects;
@@ -17,6 +18,7 @@ public final class User {
 
   private String email;
   private String name;
+  private UserRole role;
   private UserStatus status;
   private LocalDateTime updatedAt;
 
@@ -25,6 +27,7 @@ public final class User {
       String cognitoSub,
       String email,
       String name,
+      UserRole role,
       UserStatus status,
       LocalDateTime createdAt,
       LocalDateTime updatedAt) {
@@ -32,6 +35,7 @@ public final class User {
     this.cognitoSub = requireText(cognitoSub, "cognitoSub");
     this.email = requireText(email, "email");
     this.name = requireText(name, "name");
+    this.role = Objects.requireNonNull(role, "role must not be null");
     this.status = Objects.requireNonNull(status, "status must not be null");
     this.createdAt = Objects.requireNonNull(createdAt, "createdAt must not be null");
     this.updatedAt = Objects.requireNonNull(updatedAt, "updatedAt must not be null");
@@ -43,7 +47,8 @@ public final class User {
 
   public static User createFromCognito(String cognitoSub, String email, String name) {
     LocalDateTime now = LocalDateTime.now();
-    return new User(UserId.newId(), cognitoSub, email, name, UserStatus.ACTIVE, now, now);
+    return new User(
+        UserId.newId(), cognitoSub, email, name, UserRole.USER, UserStatus.ACTIVE, now, now);
   }
 
   public static User reconstitute(
@@ -51,10 +56,11 @@ public final class User {
       String cognitoSub,
       String email,
       String name,
+      UserRole role,
       UserStatus status,
       LocalDateTime createdAt,
       LocalDateTime updatedAt) {
-    return new User(id, cognitoSub, email, name, status, createdAt, updatedAt);
+    return new User(id, cognitoSub, email, name, role, status, createdAt, updatedAt);
   }
 
   public void syncProfile(String email, String name) {
@@ -84,6 +90,10 @@ public final class User {
 
   public boolean isActive() {
     return this.status == UserStatus.ACTIVE;
+  }
+
+  public boolean isAdmin() {
+    return this.role == UserRole.ADMIN;
   }
 
   private void ensureActive(String message) {

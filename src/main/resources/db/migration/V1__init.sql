@@ -3,11 +3,13 @@ CREATE TABLE users (
     cognito_sub varchar(255) NOT NULL,
     email varchar(255) NOT NULL,
     name varchar(255) NOT NULL,
+    role varchar(32) NOT NULL,
     status varchar(32) NOT NULL,
     created_at timestamptz NOT NULL,
     updated_at timestamptz NOT NULL,
     CONSTRAINT pk_users PRIMARY KEY (id),
     CONSTRAINT uk_users_cognito_sub UNIQUE (cognito_sub),
+    CONSTRAINT ck_users_role CHECK (role IN ('USER', 'ADMIN')),
     CONSTRAINT ck_users_status CHECK (status IN ('ACTIVE', 'WITHDRAWN', 'BANNED'))
 );
 

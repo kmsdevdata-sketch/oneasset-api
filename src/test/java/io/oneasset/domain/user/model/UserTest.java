@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.oneasset.domain.user.vo.UserId;
+import io.oneasset.domain.user.vo.UserRole;
 import io.oneasset.domain.user.vo.UserStatus;
 import java.time.LocalDateTime;
 import org.assertj.core.api.ThrowableAssert.ThrowingCallable;
@@ -19,6 +20,7 @@ class UserTest {
     assertThat(user.getCognitoSub()).isEqualTo("cognito-sub-1");
     assertThat(user.getEmail()).isEqualTo("user@example.com");
     assertThat(user.getName()).isEqualTo("Minseo");
+    assertThat(user.getRole()).isEqualTo(UserRole.USER);
     assertThat(user.getStatus()).isEqualTo(UserStatus.ACTIVE);
     assertThat(user.getCreatedAt()).isNotNull();
     assertThat(user.getUpdatedAt()).isEqualTo(user.getCreatedAt());
@@ -43,6 +45,7 @@ class UserTest {
             "cognito-sub-1",
             "user@example.com",
             "Minseo",
+            UserRole.ADMIN,
             UserStatus.ACTIVE,
             createdAt,
             updatedAt);
@@ -51,6 +54,8 @@ class UserTest {
     assertThat(user.getCognitoSub()).isEqualTo("cognito-sub-1");
     assertThat(user.getEmail()).isEqualTo("user@example.com");
     assertThat(user.getName()).isEqualTo("Minseo");
+    assertThat(user.getRole()).isEqualTo(UserRole.ADMIN);
+    assertThat(user.isAdmin()).isTrue();
     assertThat(user.getStatus()).isEqualTo(UserStatus.ACTIVE);
     assertThat(user.getCreatedAt()).isEqualTo(createdAt);
     assertThat(user.getUpdatedAt()).isEqualTo(updatedAt);
@@ -68,6 +73,7 @@ class UserTest {
                 "cognito-sub-1",
                 "user@example.com",
                 "Minseo",
+                UserRole.USER,
                 UserStatus.ACTIVE,
                 createdAt,
                 updatedAt));
