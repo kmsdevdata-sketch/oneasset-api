@@ -32,6 +32,34 @@ DB에는 public URL을 저장하지 않는다.
 
 CloudFront domain과 storage key로 응답 시 `deliveryUrl`을 계산한다.
 
+## 책임 메서드
+
+Asset:
+
+- `create(projectId, uploadedBy, originalFileName, contentType, sizeBytes, bucket, storageKey)`
+- `reconstitute(...)`
+- `markProcessing()`
+- `markReady()`
+- `markFailed()`
+- `delete()`
+- `isReady()`
+- `isDeleted()`
+
+AssetVariant:
+
+- `create(assetId, type, contentType, sizeBytes, bucket, storageKey, width, height)`
+- `reconstitute(...)`
+
+## 상태 전이
+
+```text
+UPLOADED -> PROCESSING -> READY
+UPLOADED -> FAILED
+PROCESSING -> FAILED
+```
+
+삭제는 상태 enum이 아니라 `deletedAt`으로 표현한다.
+
 ## 업데이트 시점
 
 - Asset 업로드/조회/삭제 API가 구현될 때

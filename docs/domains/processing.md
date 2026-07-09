@@ -39,6 +39,27 @@ ProcessingLog는 MVP1에서 테이블 후보로 둔다.
 
 단순 상태 조회 API는 ProcessingLog 없이 Asset status와 AssetVariant만으로도 가능하다.
 
+## 도메인 모델
+
+```text
+ProcessingLog
+- id
+- assetId
+- step
+- status
+- message
+- createdAt
+```
+
+`message`는 운영/디버깅용 설명이므로 nullable을 허용한다.
+
+## 책임 메서드
+
+- `create(assetId, step, status, message)`
+- `reconstitute(...)`
+- `isSuccess()`
+- `isFailed()`
+
 ## 업데이트 시점
 
 - Lambda 처리 방식이 구현될 때
