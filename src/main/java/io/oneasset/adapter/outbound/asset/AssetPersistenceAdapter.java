@@ -1,0 +1,45 @@
+package io.oneasset.adapter.outbound.asset;
+
+import io.oneasset.adapter.outbound.asset.entity.AssetEntity;
+import io.oneasset.adapter.outbound.asset.persistence.AssetJpaRepository;
+import io.oneasset.domain.asset.model.Asset;
+import io.oneasset.domain.project.vo.ProjectId;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+
+@Component
+@Transactional
+@RequiredArgsConstructor
+public class AssetPersistenceAdapter {
+
+  private final AssetJpaRepository assetJpaRepository;
+
+  public void save(Asset asset) {
+    assetJpaRepository.save(AssetEntity.from(asset));
+  }
+
+  @Transactional(readOnly = true)
+  public Optional<Asset> findActiveById(UUID assetId) {
+    return assetJpaRepository.findByIdAndDeletedAtIsNull(assetId).map(AssetEntity::toDomain);
+  }
+
+  @Transactional(readOnly = true)
+  public Optional<Asset> findActiveByStorageKey(String storageKey) {
+    return assetJpaRepository
+        .findByStorageKeyAndDeletedAtIsNull(storageKey)
+        .map(AssetEntity::toDomain);
+  }
+
+  @Transactional(readOnly = true)
+  public List<Asset> findAllActiveByProjectId(ProjectId projectId) {
+    return assetJpaRepository
+        .findAllByProjectIdAndDeletedAtIsNullOrderByCreatedAtDesc(projectId.value())
+        .stream()
+        .map(AssetEntity::toDomain)
+        .toList();
+  }
+}
