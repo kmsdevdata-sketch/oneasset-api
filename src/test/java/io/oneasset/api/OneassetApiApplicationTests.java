@@ -1,5 +1,6 @@
 package io.oneasset;
 
+import io.oneasset.adapter.outbound.project.persistence.ProjectJpaRepository;
 import io.oneasset.adapter.outbound.user.persistence.UserJpaRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -13,6 +14,8 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
           + "org.springframework.boot.flyway.autoconfigure.FlywayAutoConfiguration"
     })
 class OneassetApiApplicationTests {
+
+  @MockitoBean private ProjectJpaRepository projectJpaRepository;
 
   @MockitoBean private UserJpaRepository userJpaRepository;
 
