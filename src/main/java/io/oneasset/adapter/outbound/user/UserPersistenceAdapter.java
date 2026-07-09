@@ -22,12 +22,12 @@ public class UserPersistenceAdapter {
   }
 
   @Transactional(readOnly = true)
-  public Optional<User> load(UUID userId) {
+  public Optional<User> findActiveById(UUID userId) {
     return userJpaRepository.findByIdAndStatus(userId, UserStatus.ACTIVE).map(UserEntity::toDomain);
   }
 
   @Transactional(readOnly = true)
-  public Optional<User> loadByCognitoSub(String cognitoSub) {
+  public Optional<User> findActiveByCognitoSub(String cognitoSub) {
     return userJpaRepository
         .findByCognitoSubAndStatus(cognitoSub, UserStatus.ACTIVE)
         .map(UserEntity::toDomain);
