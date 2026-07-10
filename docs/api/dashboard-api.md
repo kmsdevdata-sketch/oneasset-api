@@ -12,7 +12,7 @@ Authorization: Bearer {cognitoJwt}
 
 ## User API
 
-### GET /me
+### GET /api/me
 
 인증된 Cognito 사용자를 OneAsset local User로 동기화한 뒤 사용자 정보를 반환한다.
 
@@ -24,14 +24,16 @@ Response:
   "data": {
     "id": "uuid",
     "email": "user@example.com",
-    "name": "김민서"
+    "name": "김민서",
+    "role": "USER",
+    "status": "ACTIVE"
   }
 }
 ```
 
 ## Project API
 
-### POST /projects
+### POST /api/projects
 
 Request:
 
@@ -50,18 +52,48 @@ Response:
     "id": "uuid",
     "name": "My Blog",
     "slug": "my-blog",
-    "createdAt": "2026-07-08T12:30:00Z"
+    "createdAt": "2026-07-08T12:30:00"
   }
 }
 ```
 
-### GET /projects
+### GET /api/projects
 
 인증 사용자가 속한 프로젝트 목록을 반환한다.
 
-### GET /projects/{projectId}
+Response:
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "uuid",
+      "name": "My Blog",
+      "slug": "my-blog",
+      "createdAt": "2026-07-08T12:30:00"
+    }
+  ]
+}
+```
+
+### GET /api/projects/{projectId}
 
 프로젝트 상세 정보를 반환한다.
+
+Response:
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": "uuid",
+    "name": "My Blog",
+    "slug": "my-blog",
+    "createdAt": "2026-07-08T12:30:00"
+  }
+}
+```
 
 ## API Key API
 

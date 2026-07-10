@@ -148,3 +148,17 @@ DB 조회
 - JWT검증 정책 
   - 첫진입시에만 /me 호출하여 없으면생성 있으면 조회하여 local User sync 및 사용자 정보를 받고 
   - 그 뒤에는 매요청 JWT 검증은 계속하되 요청마다 users테이블 조회는 하지않고 필요한 API에서만 IO수행하기로 결정 
+
+## 2026-07-10 - project-api
+- Project API 초안을 구현하였다.
+  - `POST /api/projects`
+  - `GET /api/projects`
+  - `GET /api/projects/{projectId}`
+- Controller는 outbound adapter에 직접 의존하지 않고 `ProjectUseCase`, `UserSyncUseCase`, `JwtCurrentUserExtractor`만 사용한다.
+- Project 생성 시에는 인증된 Cognito 사용자 정보를 local User로 동기화한 뒤, 생성된 Project와 owner ProjectMember를 하나의 트랜잭션에서 저장한다.
+- 이번 단계에서는 Project와 ProjectMember 영속성 작업을 `ProjectPersistencePort` 하나로 묶었다.
+  - 프로젝트와 멤버십은 테이블은 다르지만 Project API 유스케이스 관점에서는 함께 조합되는 작업이므로 포트를 세분화하지 않았다.
+  - 추후 권한 정책, 멤버 초대/삭제, 테스트 복잡도가 커지면 포트 분리를 다시 검토한다.
+- slug는 application service에서 프로젝트 이름 기반으로 생성한다.
+  - 기본 slug가 이미 존재하면 `my-blog-2`처럼 suffix를 붙인다.
+  - 예약어, 허용 문자, 충돌 재시도 정책은 후속 정책으로 둔다.
