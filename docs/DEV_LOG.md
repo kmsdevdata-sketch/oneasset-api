@@ -131,3 +131,9 @@ DB 조회
 - ProcessingLog는 Asset의 현재 상태를 판단하는 모델이 아니라 비동기 처리 과정의 이벤트 이력이다.
 - ProcessingLog의 이번 구현 범위는 테이블, 도메인 모델, JPA Entity, Repository, Persistence Adapter, 어댑터 단위 테스트까지만 포함한다.
 - ProcessingLog를 저장하는 application service, API 응답 노출, Lambda/SQS 실제 연동, 실패/재시도 정책은 이번 범위에 포함하지 않는다.
+
+## 2026-07-10 - Cognito Security
+- Security Config설정을 우선작업 
+  - JWT사용하기 때문에 CSRF 비활성화 , 세션 비활성화 
+  - /error , /actuator/health 만 열어주고 나머지는 인증활성화 
+  - Cognito Token을 받고 검증/디코딩 해야하기 때문에 Resource Server활성화 
