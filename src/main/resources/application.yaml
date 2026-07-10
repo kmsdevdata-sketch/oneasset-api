@@ -25,6 +25,12 @@ spring:
     enabled: true
     baseline-on-migrate: true
 
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${COGNITO_ISSUER_URI}
+
 logging:
   level:
     org.hibernate.SQL: debug
