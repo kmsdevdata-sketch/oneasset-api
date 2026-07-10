@@ -7,6 +7,8 @@ import io.oneasset.domain.project.model.Project;
 import io.oneasset.domain.project.vo.ProjectId;
 import io.oneasset.domain.projectmember.model.ProjectMember;
 import io.oneasset.domain.user.vo.UserId;
+import io.oneasset.exception.BaseException;
+import io.oneasset.exception.code.ProjectErrorCode;
 import java.text.Normalizer;
 import java.util.List;
 import java.util.Locale;
@@ -46,11 +48,11 @@ public class ProjectService implements ProjectUseCase {
   public Project findById(UserId userId, ProjectId projectId) {
     projectPersistencePort
         .findMember(projectId, userId)
-        .orElseThrow(() -> new IllegalArgumentException("Project member not found"));
+        .orElseThrow(() -> new BaseException(ProjectErrorCode.PROJECT_ACCESS_DENIED));
 
     return projectPersistencePort
         .findById(projectId)
-        .orElseThrow(() -> new IllegalArgumentException("Project not found"));
+        .orElseThrow(() -> new BaseException(ProjectErrorCode.PROJECT_NOT_FOUND));
   }
 
   private String createUniqueSlug(String name) {

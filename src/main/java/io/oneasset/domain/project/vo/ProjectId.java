@@ -1,5 +1,7 @@
 package io.oneasset.domain.project.vo;
 
+import io.oneasset.exception.BaseException;
+import io.oneasset.exception.code.CommonErrorCode;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -19,9 +21,13 @@ public record ProjectId(UUID value) {
 
   public static ProjectId fromString(String value) {
     if (value == null || value.isBlank()) {
-      throw new IllegalArgumentException("value must not be blank");
+      throw new BaseException(CommonErrorCode.INVALID_ID, "ProjectId must not be blank");
     }
-    return new ProjectId(UUID.fromString(value));
+    try {
+      return new ProjectId(UUID.fromString(value));
+    } catch (IllegalArgumentException e) {
+      throw new BaseException(CommonErrorCode.INVALID_ID, "ProjectId must be UUID");
+    }
   }
 
   @Override

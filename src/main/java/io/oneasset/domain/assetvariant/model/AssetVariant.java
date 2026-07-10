@@ -5,6 +5,8 @@ import static io.oneasset.domain.common.DomainValidator.requireText;
 import io.oneasset.domain.asset.vo.AssetId;
 import io.oneasset.domain.assetvariant.vo.AssetVariantId;
 import io.oneasset.domain.assetvariant.vo.AssetVariantType;
+import io.oneasset.exception.BaseException;
+import io.oneasset.exception.code.AssetVariantErrorCode;
 import java.time.LocalDateTime;
 import java.util.Objects;
 import lombok.Getter;
@@ -85,14 +87,16 @@ public final class AssetVariant {
 
   private static long requirePositive(long value, String fieldName) {
     if (value <= 0) {
-      throw new IllegalArgumentException(fieldName + " must be positive");
+      throw new BaseException(
+          AssetVariantErrorCode.INVALID_ASSET_VARIANT_SIZE, fieldName + " must be positive");
     }
     return value;
   }
 
   private static Integer requirePositiveIfPresent(Integer value, String fieldName) {
     if (value != null && value <= 0) {
-      throw new IllegalArgumentException(fieldName + " must be positive");
+      throw new BaseException(
+          AssetVariantErrorCode.INVALID_ASSET_VARIANT_SIZE, fieldName + " must be positive");
     }
     return value;
   }

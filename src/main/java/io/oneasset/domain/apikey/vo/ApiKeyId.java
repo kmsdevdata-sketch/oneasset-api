@@ -1,5 +1,7 @@
 package io.oneasset.domain.apikey.vo;
 
+import io.oneasset.exception.BaseException;
+import io.oneasset.exception.code.CommonErrorCode;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -19,9 +21,13 @@ public record ApiKeyId(UUID value) {
 
   public static ApiKeyId fromString(String value) {
     if (value == null || value.isBlank()) {
-      throw new IllegalArgumentException("value must not be blank");
+      throw new BaseException(CommonErrorCode.INVALID_ID, "ApiKeyId must not be blank");
     }
-    return new ApiKeyId(UUID.fromString(value));
+    try {
+      return new ApiKeyId(UUID.fromString(value));
+    } catch (IllegalArgumentException e) {
+      throw new BaseException(CommonErrorCode.INVALID_ID, "ApiKeyId must be UUID");
+    }
   }
 
   @Override

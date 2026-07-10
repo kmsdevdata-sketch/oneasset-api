@@ -1,6 +1,7 @@
 package io.oneasset.application.project.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -11,6 +12,8 @@ import io.oneasset.application.project.required.ProjectPersistencePort;
 import io.oneasset.domain.project.model.Project;
 import io.oneasset.domain.projectmember.model.ProjectMember;
 import io.oneasset.domain.user.vo.UserId;
+import io.oneasset.exception.BaseException;
+import io.oneasset.exception.code.ProjectErrorCode;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
@@ -82,5 +85,32 @@ class ProjectServiceTest {
     assertThat(found.getId()).isEqualTo(project.getId());
     verify(projectPersistencePort).findMember(project.getId(), userId);
     verify(projectPersistencePort).findById(project.getId());
+  }
+
+  @Test
+  void throwsAccessDeniedWhenUserIsNotProjectMember() {
+    UserId userId = UserId.newId();
+    Project project = Project.create("My Blog", "my-blog");
+    when(projectPersistencePort.findMember(project.getId(), userId)).thenReturn(Optional.empty());
+
+    assertThatThrownBy(() -> projectService.findById(userId, project.getId()))
+        .isInstanceOf(BaseException.class)
+        .extracting("errorCode")
+        .isEqualTo(ProjectErrorCode.PROJECT_ACCESS_DENIED);
+  }
+
+  @Test
+  void throwsNotFoundWhenProjectDoesNotExist() {
+    UserId userId = UserId.newId();
+    Project project = Project.create("My Blog", "my-blog");
+    ProjectMember member = ProjectMember.createOwner(project.getId(), userId);
+    when(projectPersistencePort.findMember(project.getId(), userId))
+        .thenReturn(Optional.of(member));
+    when(projectPersistencePort.findById(project.getId())).thenReturn(Optional.empty());
+
+    assertThatThrownBy(() -> projectService.findById(userId, project.getId()))
+        .isInstanceOf(BaseException.class)
+        .extracting("errorCode")
+        .isEqualTo(ProjectErrorCode.PROJECT_NOT_FOUND);
   }
 }

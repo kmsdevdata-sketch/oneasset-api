@@ -7,6 +7,8 @@ import io.oneasset.domain.apikey.vo.ApiKeyId;
 import io.oneasset.domain.apikey.vo.ApiKeyPrefix;
 import io.oneasset.domain.apikey.vo.ApiKeyStatus;
 import io.oneasset.domain.project.vo.ProjectId;
+import io.oneasset.exception.BaseException;
+import io.oneasset.exception.code.ApiKeyErrorCode;
 import java.time.LocalDateTime;
 import java.util.Objects;
 import lombok.Getter;
@@ -107,25 +109,29 @@ public final class ApiKey {
 
   private void ensureActive() {
     if (!isActive()) {
-      throw new IllegalStateException("Revoked API key cannot be changed");
+      throw new BaseException(ApiKeyErrorCode.REVOKED_API_KEY_CANNOT_BE_CHANGED);
     }
   }
 
   private void validateTimestamps() {
     if (lastUsedAt != null && lastUsedAt.isBefore(createdAt)) {
-      throw new IllegalArgumentException("lastUsedAt must not be before createdAt");
+      throw new BaseException(
+          ApiKeyErrorCode.INVALID_API_KEY_AUDIT_TIME, "lastUsedAt must not be before createdAt");
     }
 
     if (revokedAt != null && revokedAt.isBefore(createdAt)) {
-      throw new IllegalArgumentException("revokedAt must not be before createdAt");
+      throw new BaseException(
+          ApiKeyErrorCode.INVALID_API_KEY_AUDIT_TIME, "revokedAt must not be before createdAt");
     }
 
     if (status == ApiKeyStatus.ACTIVE && revokedAt != null) {
-      throw new IllegalArgumentException("active API key must not have revokedAt");
+      throw new BaseException(
+          ApiKeyErrorCode.INVALID_API_KEY_STATUS, "active API key must not have revokedAt");
     }
 
     if (status == ApiKeyStatus.REVOKED && revokedAt == null) {
-      throw new IllegalArgumentException("revoked API key must have revokedAt");
+      throw new BaseException(
+          ApiKeyErrorCode.INVALID_API_KEY_STATUS, "revoked API key must have revokedAt");
     }
   }
 }

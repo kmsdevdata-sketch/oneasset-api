@@ -6,6 +6,8 @@ import io.oneasset.domain.asset.vo.AssetId;
 import io.oneasset.domain.asset.vo.AssetStatus;
 import io.oneasset.domain.project.vo.ProjectId;
 import io.oneasset.domain.user.vo.UserId;
+import io.oneasset.exception.BaseException;
+import io.oneasset.exception.code.AssetErrorCode;
 import java.time.LocalDateTime;
 import java.util.Objects;
 import lombok.Getter;
@@ -111,7 +113,9 @@ public final class Asset {
   public void markProcessing() {
     ensureNotDeleted();
     if (status != AssetStatus.UPLOADED) {
-      throw new IllegalStateException("Only uploaded assets can start processing");
+      throw new BaseException(
+          AssetErrorCode.INVALID_ASSET_STATUS_TRANSITION,
+          "Only uploaded assets can start processing");
     }
     this.status = AssetStatus.PROCESSING;
     this.updatedAt = LocalDateTime.now();
@@ -120,7 +124,9 @@ public final class Asset {
   public void markReady() {
     ensureNotDeleted();
     if (status != AssetStatus.PROCESSING) {
-      throw new IllegalStateException("Only processing assets can be marked ready");
+      throw new BaseException(
+          AssetErrorCode.INVALID_ASSET_STATUS_TRANSITION,
+          "Only processing assets can be marked ready");
     }
     this.status = AssetStatus.READY;
     this.updatedAt = LocalDateTime.now();
@@ -129,7 +135,8 @@ public final class Asset {
   public void markFailed() {
     ensureNotDeleted();
     if (status == AssetStatus.READY) {
-      throw new IllegalStateException("Ready asset cannot be marked failed");
+      throw new BaseException(
+          AssetErrorCode.INVALID_ASSET_STATUS_TRANSITION, "Ready asset cannot be marked failed");
     }
     this.status = AssetStatus.FAILED;
     this.updatedAt = LocalDateTime.now();
@@ -152,23 +159,25 @@ public final class Asset {
 
   private void ensureNotDeleted() {
     if (isDeleted()) {
-      throw new IllegalStateException("Deleted asset cannot be changed");
+      throw new BaseException(AssetErrorCode.DELETED_ASSET_CANNOT_BE_CHANGED);
     }
   }
 
   private void validateTimestamps() {
     if (updatedAt.isBefore(createdAt)) {
-      throw new IllegalArgumentException("updatedAt must not be before createdAt");
+      throw new BaseException(
+          AssetErrorCode.INVALID_ASSET_AUDIT_TIME, "updatedAt must not be before createdAt");
     }
 
     if (deletedAt != null && deletedAt.isBefore(createdAt)) {
-      throw new IllegalArgumentException("deletedAt must not be before createdAt");
+      throw new BaseException(
+          AssetErrorCode.INVALID_ASSET_AUDIT_TIME, "deletedAt must not be before createdAt");
     }
   }
 
   private static long requirePositive(long value, String fieldName) {
     if (value <= 0) {
-      throw new IllegalArgumentException(fieldName + " must be positive");
+      throw new BaseException(AssetErrorCode.INVALID_ASSET_SIZE, fieldName + " must be positive");
     }
     return value;
   }

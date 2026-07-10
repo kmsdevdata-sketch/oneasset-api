@@ -1,5 +1,7 @@
 package io.oneasset.domain.user.vo;
 
+import io.oneasset.exception.BaseException;
+import io.oneasset.exception.code.CommonErrorCode;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -19,9 +21,13 @@ public record UserId(UUID value) {
 
   public static UserId fromString(String value) {
     if (value == null || value.isBlank()) {
-      throw new IllegalArgumentException("value must not be blank");
+      throw new BaseException(CommonErrorCode.INVALID_ID, "UserId must not be blank");
     }
-    return new UserId(UUID.fromString(value));
+    try {
+      return new UserId(UUID.fromString(value));
+    } catch (IllegalArgumentException e) {
+      throw new BaseException(CommonErrorCode.INVALID_ID, "UserId must be UUID");
+    }
   }
 
   @Override

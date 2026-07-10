@@ -37,23 +37,27 @@ MVP1 초기 응답에는 `detail`을 포함하지 않는다.
 - `ErrorCode`는 `code`, `title`, `status`, `type`을 제공한다.
 - `BaseException`은 `ErrorCode`를 보관한다.
 - `GlobalExceptionHandler`는 `BaseException`을 처리하고 request URI를 `instance`로 채운다.
-- Validation, Security, DB, AWS 연동 예외는 실제 API 구현 중 필요해질 때 별도 handler를 추가한다.
+- Validation 실패는 `COMMON_INVALID_INPUT_400`으로 응답한다.
+- DB 접근 예외는 `COMMON_DATA_ACCESS_ERROR_500`으로 응답한다.
+- 예상하지 못한 예외는 `COMMON_INTERNAL_SERVER_ERROR_500`으로 응답한다.
+- 도메인 모델과 application service에서 직접 `IllegalArgumentException`, `IllegalStateException`을 던지지 않고 `BaseException`을 사용한다.
 
 ## 에러 코드 초안
 
 | HTTP status | code | type | 의미 |
 | --- | --- | --- | --- |
-| 400 | `VALIDATION_FAILED` | `/problems/validation-failed` | 요청 값 검증 실패 |
-| 401 | `UNAUTHORIZED` | `/problems/auth/unauthorized` | 인증 실패 |
-| 403 | `FORBIDDEN` | `/problems/auth/forbidden` | 권한 없음 |
-| 404 | `USER_NOT_FOUND` | `/problems/users/not-found` | User 없음 |
-| 404 | `PROJECT_NOT_FOUND` | `/problems/projects/not-found` | Project 없음 |
-| 404 | `API_KEY_NOT_FOUND` | `/problems/api-keys/not-found` | API Key 없음 |
-| 401 | `API_KEY_INVALID` | `/problems/api-keys/invalid` | API Key 검증 실패 |
-| 401 | `API_KEY_REVOKED` | `/problems/api-keys/revoked` | 폐기된 API Key |
-| 404 | `ASSET_NOT_FOUND` | `/problems/assets/not-found` | Asset 없음 |
-| 409 | `DUPLICATE_RESOURCE` | `/problems/duplicate-resource` | unique 제약 충돌 |
-| 500 | `INTERNAL_SERVER_ERROR` | `/problems/internal-server-error` | 서버 내부 오류 |
+| 400 | `COMMON_INVALID_INPUT_400` | `/errors/common/invalid-input` | 요청 값 또는 도메인 입력값 검증 실패 |
+| 400 | `COMMON_INVALID_ID_400` | `/errors/common/invalid-id` | ID 형식 오류 |
+| 401 | `AUTH_REQUIRED_JWT_CLAIM_MISSING_401` | `/errors/auth/required-jwt-claim-missing` | JWT 필수 claim 누락 |
+| 403 | `PROJECT_ACCESS_DENIED_403` | `/errors/project/access-denied` | 프로젝트 접근 권한 없음 |
+| 404 | `PROJECT_NOT_FOUND_404` | `/errors/project/not-found` | Project 없음 |
+| 409 | `PROJECT_DELETED_CANNOT_BE_CHANGED_409` | `/errors/project/deleted-cannot-be-changed` | 삭제된 Project 변경 시도 |
+| 409 | `USER_NOT_ACTIVE_409` | `/errors/user/not-active` | 활성 상태가 아닌 User 변경 시도 |
+| 409 | `API_KEY_REVOKED_CANNOT_BE_CHANGED_409` | `/errors/api-key/revoked-cannot-be-changed` | 폐기된 API Key 변경 시도 |
+| 409 | `ASSET_INVALID_STATUS_TRANSITION_409` | `/errors/asset/invalid-status-transition` | Asset 상태 전이 규칙 위반 |
+| 409 | `ASSET_DELETED_CANNOT_BE_CHANGED_409` | `/errors/asset/deleted-cannot-be-changed` | 삭제된 Asset 변경 시도 |
+| 500 | `COMMON_DATA_ACCESS_ERROR_500` | `/errors/common/data-access-error` | DB 접근 오류 |
+| 500 | `COMMON_INTERNAL_SERVER_ERROR_500` | `/errors/common/internal-server-error` | 서버 내부 오류 |
 
 ## 업데이트 시점
 

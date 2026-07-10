@@ -162,3 +162,20 @@ DB 조회
 - slug는 application service에서 프로젝트 이름 기반으로 생성한다.
   - 기본 slug가 이미 존재하면 `my-blog-2`처럼 suffix를 붙인다.
   - 예약어, 허용 문자, 충돌 재시도 정책은 후속 정책으로 둔다.
+
+## 2026-07-10 - error-handling
+- 기존에 직접 던지던 `IllegalArgumentException`, `IllegalStateException`을 `BaseException` 기반으로 교체하였다.
+- 예외 클래스 수를 늘리지 않고 도메인/관심사별 `ErrorCode` enum을 추가하였다.
+  - `CommonErrorCode`
+  - `AuthErrorCode`
+  - `ProjectErrorCode`
+  - `UserErrorCode`
+  - `ApiKeyErrorCode`
+  - `AssetErrorCode`
+  - `AssetVariantErrorCode`
+- `GlobalExceptionHandler`는 다음 예외를 공통 응답으로 변환한다.
+  - `BaseException`
+  - `MethodArgumentNotValidException`
+  - `DataAccessException`
+  - 예상하지 못한 `Exception`
+- 현재 단계에서는 레이어별 예외 상속구조를 만들지 않고, API 의미 기준의 ErrorCode를 사용한다.

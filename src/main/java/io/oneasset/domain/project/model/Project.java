@@ -3,6 +3,8 @@ package io.oneasset.domain.project.model;
 import static io.oneasset.domain.common.DomainValidator.requireText;
 
 import io.oneasset.domain.project.vo.ProjectId;
+import io.oneasset.exception.BaseException;
+import io.oneasset.exception.code.ProjectErrorCode;
 import java.time.LocalDateTime;
 import java.util.Objects;
 import lombok.Getter;
@@ -33,11 +35,13 @@ public final class Project {
     this.deletedAt = deletedAt;
 
     if (updatedAt.isBefore(createdAt)) {
-      throw new IllegalArgumentException("updatedAt must not be before createdAt");
+      throw new BaseException(
+          ProjectErrorCode.INVALID_PROJECT_AUDIT_TIME, "updatedAt must not be before createdAt");
     }
 
     if (deletedAt != null && deletedAt.isBefore(createdAt)) {
-      throw new IllegalArgumentException("deletedAt must not be before createdAt");
+      throw new BaseException(
+          ProjectErrorCode.INVALID_PROJECT_AUDIT_TIME, "deletedAt must not be before createdAt");
     }
   }
 
@@ -81,7 +85,7 @@ public final class Project {
 
   private void ensureNotDeleted() {
     if (isDeleted()) {
-      throw new IllegalStateException("Deleted project cannot be changed");
+      throw new BaseException(ProjectErrorCode.DELETED_PROJECT_CANNOT_BE_CHANGED);
     }
   }
 }

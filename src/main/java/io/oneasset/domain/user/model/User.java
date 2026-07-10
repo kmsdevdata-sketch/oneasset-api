@@ -5,6 +5,8 @@ import static io.oneasset.domain.common.DomainValidator.requireText;
 import io.oneasset.domain.user.vo.UserId;
 import io.oneasset.domain.user.vo.UserRole;
 import io.oneasset.domain.user.vo.UserStatus;
+import io.oneasset.exception.BaseException;
+import io.oneasset.exception.code.UserErrorCode;
 import java.time.LocalDateTime;
 import java.util.Objects;
 import lombok.Getter;
@@ -41,7 +43,8 @@ public final class User {
     this.updatedAt = Objects.requireNonNull(updatedAt, "updatedAt must not be null");
 
     if (updatedAt.isBefore(createdAt)) {
-      throw new IllegalArgumentException("updatedAt must not be before createdAt");
+      throw new BaseException(
+          UserErrorCode.INVALID_USER_AUDIT_TIME, "updatedAt must not be before createdAt");
     }
   }
 
@@ -98,7 +101,7 @@ public final class User {
 
   private void ensureActive(String message) {
     if (!isActive()) {
-      throw new IllegalStateException(message);
+      throw new BaseException(UserErrorCode.USER_NOT_ACTIVE, message);
     }
   }
 }
