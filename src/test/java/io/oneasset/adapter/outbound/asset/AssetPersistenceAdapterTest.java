@@ -67,7 +67,8 @@ class AssetPersistenceAdapterTest {
     assertThat(found).hasSize(1);
     assertThat(found.getFirst().getProjectId()).isEqualTo(asset.getProjectId());
     verify(assetJpaRepository)
-        .findAllByProjectIdAndDeletedAtIsNullOrderByCreatedAtDesc(asset.getProjectId().value());
+        .findAllByProjectIdAndDeletedAtIsNullOrderByCreatedAtDesc(
+            asset.getProjectId().value());
   }
 
   private static Asset createAsset() {

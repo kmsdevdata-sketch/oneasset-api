@@ -20,19 +20,26 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
     })
 class OneassetApiApplicationTests {
 
-  @MockitoBean private AssetJpaRepository assetJpaRepository;
+  @MockitoBean
+  private AssetJpaRepository assetJpaRepository;
 
-  @MockitoBean private AssetVariantJpaRepository assetVariantJpaRepository;
+  @MockitoBean
+  private AssetVariantJpaRepository assetVariantJpaRepository;
 
-  @MockitoBean private ProcessingLogJpaRepository processingLogJpaRepository;
+  @MockitoBean
+  private ProcessingLogJpaRepository processingLogJpaRepository;
 
-  @MockitoBean private ApiKeyJpaRepository apiKeyJpaRepository;
+  @MockitoBean
+  private ApiKeyJpaRepository apiKeyJpaRepository;
 
-  @MockitoBean private ProjectJpaRepository projectJpaRepository;
+  @MockitoBean
+  private ProjectJpaRepository projectJpaRepository;
 
-  @MockitoBean private ProjectMemberJpaRepository projectMemberJpaRepository;
+  @MockitoBean
+  private ProjectMemberJpaRepository projectMemberJpaRepository;
 
-  @MockitoBean private UserJpaRepository userJpaRepository;
+  @MockitoBean
+  private UserJpaRepository userJpaRepository;
 
   @Test
   void contextLoads() {}

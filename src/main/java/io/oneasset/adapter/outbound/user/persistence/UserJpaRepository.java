@@ -9,5 +9,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface UserJpaRepository extends JpaRepository<UserEntity, UUID> {
   Optional<UserEntity> findByIdAndStatus(UUID id, UserStatus status);
 
-  Optional<UserEntity> findByCognitoSubAndStatus(String cognitoSub, UserStatus status);
+  Optional<UserEntity> findByCognitoSub(String cognitoSub);
 }

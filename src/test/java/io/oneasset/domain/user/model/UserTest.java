@@ -39,16 +39,15 @@ class UserTest {
     LocalDateTime createdAt = LocalDateTime.of(2026, 7, 9, 1, 0);
     LocalDateTime updatedAt = LocalDateTime.of(2026, 7, 9, 1, 30);
 
-    User user =
-        User.reconstitute(
-            id,
-            "cognito-sub-1",
-            "user@example.com",
-            "Minseo",
-            UserRole.ADMIN,
-            UserStatus.ACTIVE,
-            createdAt,
-            updatedAt);
+    User user = User.reconstitute(
+        id,
+        "cognito-sub-1",
+        "user@example.com",
+        "Minseo",
+        UserRole.ADMIN,
+        UserStatus.ACTIVE,
+        createdAt,
+        updatedAt);
 
     assertThat(user.getId()).isEqualTo(id);
     assertThat(user.getCognitoSub()).isEqualTo("cognito-sub-1");
@@ -66,17 +65,15 @@ class UserTest {
     LocalDateTime createdAt = LocalDateTime.of(2026, 7, 9, 1, 30);
     LocalDateTime updatedAt = LocalDateTime.of(2026, 7, 9, 1, 0);
 
-    assertDomainFailure(
-        () ->
-            User.reconstitute(
-                UserId.newId(),
-                "cognito-sub-1",
-                "user@example.com",
-                "Minseo",
-                UserRole.USER,
-                UserStatus.ACTIVE,
-                createdAt,
-                updatedAt));
+    assertDomainFailure(() -> User.reconstitute(
+        UserId.newId(),
+        "cognito-sub-1",
+        "user@example.com",
+        "Minseo",
+        UserRole.USER,
+        UserStatus.ACTIVE,
+        createdAt,
+        updatedAt));
   }
 
   @Test

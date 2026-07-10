@@ -69,7 +69,7 @@ tasks.withType<Test> {
 
 spotless {
     java {
-        googleJavaFormat("1.28.0")
+        palantirJavaFormat().style("GOOGLE")
 
         target("src/**/*.java")
 

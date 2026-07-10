@@ -16,16 +16,15 @@ class AssetVariantTest {
   void createsAssetVariant() {
     AssetId assetId = AssetId.newId();
 
-    AssetVariant variant =
-        AssetVariant.create(
-            assetId,
-            AssetVariantType.WEBP,
-            "image/webp",
-            512,
-            "oneasset-variants",
-            "variants/project/profile.webp",
-            300,
-            300);
+    AssetVariant variant = AssetVariant.create(
+        assetId,
+        AssetVariantType.WEBP,
+        "image/webp",
+        512,
+        "oneasset-variants",
+        "variants/project/profile.webp",
+        300,
+        300);
 
     assertThat(variant.getId()).isNotNull();
     assertThat(variant.getAssetId()).isEqualTo(assetId);
@@ -45,18 +44,17 @@ class AssetVariantTest {
     AssetId assetId = AssetId.newId();
     LocalDateTime createdAt = LocalDateTime.of(2026, 7, 9, 12, 0);
 
-    AssetVariant variant =
-        AssetVariant.reconstitute(
-            id,
-            assetId,
-            AssetVariantType.ORIGINAL,
-            "image/png",
-            1024,
-            "bucket",
-            "key",
-            null,
-            null,
-            createdAt);
+    AssetVariant variant = AssetVariant.reconstitute(
+        id,
+        assetId,
+        AssetVariantType.ORIGINAL,
+        "image/png",
+        1024,
+        "bucket",
+        "key",
+        null,
+        null,
+        createdAt);
 
     assertThat(variant.getId()).isEqualTo(id);
     assertThat(variant.getAssetId()).isEqualTo(assetId);
@@ -67,32 +65,12 @@ class AssetVariantTest {
 
   @Test
   void rejectsInvalidAssetVariantInput() {
-    assertDomainFailure(
-        () ->
-            AssetVariant.create(
-                AssetId.newId(), AssetVariantType.WEBP, " ", 512, "bucket", "key", 300, 300));
-    assertDomainFailure(
-        () ->
-            AssetVariant.create(
-                AssetId.newId(),
-                AssetVariantType.WEBP,
-                "image/webp",
-                0,
-                "bucket",
-                "key",
-                300,
-                300));
-    assertDomainFailure(
-        () ->
-            AssetVariant.create(
-                AssetId.newId(),
-                AssetVariantType.WEBP,
-                "image/webp",
-                512,
-                "bucket",
-                "key",
-                0,
-                300));
+    assertDomainFailure(() -> AssetVariant.create(
+        AssetId.newId(), AssetVariantType.WEBP, " ", 512, "bucket", "key", 300, 300));
+    assertDomainFailure(() -> AssetVariant.create(
+        AssetId.newId(), AssetVariantType.WEBP, "image/webp", 0, "bucket", "key", 300, 300));
+    assertDomainFailure(() -> AssetVariant.create(
+        AssetId.newId(), AssetVariantType.WEBP, "image/webp", 512, "bucket", "key", 0, 300));
   }
 
   private static void assertDomainFailure(ThrowingCallable action) {

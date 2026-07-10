@@ -137,3 +137,11 @@ DB 조회
   - JWT사용하기 때문에 CSRF 비활성화 , 세션 비활성화 
   - /error , /actuator/health 만 열어주고 나머지는 인증활성화 
   - Cognito Token을 받고 검증/디코딩 해야하기 때문에 Resource Server활성화 
+- User Port관련작업 
+  - UserSyncPort 
+    - 추후 필터단에서 사용할수있는 findOrCreate 포트 작성 
+    - 라이트하게 가게 될 경우 필터에서 어댑터 직접의존발생을 고려하여 포트분리 
+  - UserPersistencePort 
+    - 마찬가지로 서비스단에서 어댑터 직접호출을 피하기위하여 작성 
+  - User save에서 도메인모델 User 반환하도록 변경
+    - 추후 확장성을 고려하여 변경 

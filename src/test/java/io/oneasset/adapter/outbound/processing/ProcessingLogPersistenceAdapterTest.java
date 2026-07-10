@@ -34,7 +34,8 @@ class ProcessingLogPersistenceAdapterTest {
   @Test
   void findsAllProcessingLogsByAssetId() {
     ProcessingLog log = createProcessingLog();
-    when(processingLogJpaRepository.findAllByAssetIdOrderByCreatedAtAsc(log.getAssetId().value()))
+    when(processingLogJpaRepository.findAllByAssetIdOrderByCreatedAtAsc(
+            log.getAssetId().value()))
         .thenReturn(List.of(ProcessingLogEntity.from(log)));
 
     List<ProcessingLog> found = adapter.findAllByAssetId(log.getAssetId());

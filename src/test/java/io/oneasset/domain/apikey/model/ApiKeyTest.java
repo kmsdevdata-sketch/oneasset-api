@@ -36,10 +36,8 @@ class ApiKeyTest {
 
   @Test
   void rejectsInvalidCreateInput() {
-    assertDomainFailure(
-        () ->
-            ApiKey.create(
-                ProjectId.newId(), " ", ApiKeyPrefix.of("oa_live_abcd"), ApiKeyHash.of("hash")));
+    assertDomainFailure(() -> ApiKey.create(
+        ProjectId.newId(), " ", ApiKeyPrefix.of("oa_live_abcd"), ApiKeyHash.of("hash")));
   }
 
   @Test
@@ -50,17 +48,16 @@ class ApiKeyTest {
     LocalDateTime lastUsedAt = LocalDateTime.of(2026, 7, 9, 10, 30);
     LocalDateTime revokedAt = LocalDateTime.of(2026, 7, 9, 11, 0);
 
-    ApiKey apiKey =
-        ApiKey.reconstitute(
-            id,
-            projectId,
-            "Production",
-            ApiKeyPrefix.of("oa_live_abcd"),
-            ApiKeyHash.of("hash"),
-            ApiKeyStatus.REVOKED,
-            createdAt,
-            lastUsedAt,
-            revokedAt);
+    ApiKey apiKey = ApiKey.reconstitute(
+        id,
+        projectId,
+        "Production",
+        ApiKeyPrefix.of("oa_live_abcd"),
+        ApiKeyHash.of("hash"),
+        ApiKeyStatus.REVOKED,
+        createdAt,
+        lastUsedAt,
+        revokedAt);
 
     assertThat(apiKey.getId()).isEqualTo(id);
     assertThat(apiKey.getProjectId()).isEqualTo(projectId);

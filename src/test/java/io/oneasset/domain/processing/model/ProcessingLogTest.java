@@ -15,9 +15,8 @@ class ProcessingLogTest {
   void createsProcessingLog() {
     AssetId assetId = AssetId.newId();
 
-    ProcessingLog log =
-        ProcessingLog.create(
-            assetId, ProcessingStep.WEBP, ProcessingStatus.SUCCESS, "created webp");
+    ProcessingLog log = ProcessingLog.create(
+        assetId, ProcessingStep.WEBP, ProcessingStatus.SUCCESS, "created webp");
 
     assertThat(log.getId()).isNotNull();
     assertThat(log.getAssetId()).isEqualTo(assetId);
@@ -34,9 +33,8 @@ class ProcessingLogTest {
     AssetId assetId = AssetId.newId();
     LocalDateTime createdAt = LocalDateTime.of(2026, 7, 9, 12, 0);
 
-    ProcessingLog log =
-        ProcessingLog.reconstitute(
-            id, assetId, ProcessingStep.THUMBNAIL, ProcessingStatus.FAILED, null, createdAt);
+    ProcessingLog log = ProcessingLog.reconstitute(
+        id, assetId, ProcessingStep.THUMBNAIL, ProcessingStatus.FAILED, null, createdAt);
 
     assertThat(log.getId()).isEqualTo(id);
     assertThat(log.getAssetId()).isEqualTo(assetId);

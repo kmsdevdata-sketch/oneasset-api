@@ -18,15 +18,14 @@ class AssetTest {
     ProjectId projectId = ProjectId.newId();
     UserId uploadedBy = UserId.newId();
 
-    Asset asset =
-        Asset.create(
-            projectId,
-            uploadedBy,
-            "profile.png",
-            "image/png",
-            1024,
-            "oneasset-original",
-            "original/project/profile.png");
+    Asset asset = Asset.create(
+        projectId,
+        uploadedBy,
+        "profile.png",
+        "image/png",
+        1024,
+        "oneasset-original",
+        "original/project/profile.png");
 
     assertThat(asset.getId()).isNotNull();
     assertThat(asset.getProjectId()).isEqualTo(projectId);
@@ -43,14 +42,10 @@ class AssetTest {
 
   @Test
   void rejectsInvalidCreateInput() {
-    assertDomainFailure(
-        () ->
-            Asset.create(
-                ProjectId.newId(), UserId.newId(), " ", "image/png", 1024, "bucket", "key"));
-    assertDomainFailure(
-        () ->
-            Asset.create(
-                ProjectId.newId(), UserId.newId(), "profile.png", "image/png", 0, "bucket", "key"));
+    assertDomainFailure(() ->
+        Asset.create(ProjectId.newId(), UserId.newId(), " ", "image/png", 1024, "bucket", "key"));
+    assertDomainFailure(() -> Asset.create(
+        ProjectId.newId(), UserId.newId(), "profile.png", "image/png", 0, "bucket", "key"));
   }
 
   @Test
@@ -62,20 +57,19 @@ class AssetTest {
     LocalDateTime updatedAt = LocalDateTime.of(2026, 7, 9, 10, 30);
     LocalDateTime deletedAt = LocalDateTime.of(2026, 7, 9, 11, 0);
 
-    Asset asset =
-        Asset.reconstitute(
-            id,
-            projectId,
-            uploadedBy,
-            "profile.png",
-            "image/png",
-            1024,
-            "bucket",
-            "key",
-            AssetStatus.FAILED,
-            createdAt,
-            updatedAt,
-            deletedAt);
+    Asset asset = Asset.reconstitute(
+        id,
+        projectId,
+        uploadedBy,
+        "profile.png",
+        "image/png",
+        1024,
+        "bucket",
+        "key",
+        AssetStatus.FAILED,
+        createdAt,
+        updatedAt,
+        deletedAt);
 
     assertThat(asset.getId()).isEqualTo(id);
     assertThat(asset.getProjectId()).isEqualTo(projectId);

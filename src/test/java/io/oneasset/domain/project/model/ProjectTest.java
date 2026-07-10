@@ -53,14 +53,10 @@ class ProjectTest {
     LocalDateTime createdAt = LocalDateTime.of(2026, 7, 9, 10, 30);
     LocalDateTime earlier = LocalDateTime.of(2026, 7, 9, 10, 0);
 
-    assertDomainFailure(
-        () ->
-            Project.reconstitute(
-                ProjectId.newId(), "My Blog", "my-blog", createdAt, earlier, null));
-    assertDomainFailure(
-        () ->
-            Project.reconstitute(
-                ProjectId.newId(), "My Blog", "my-blog", createdAt, createdAt, earlier));
+    assertDomainFailure(() ->
+        Project.reconstitute(ProjectId.newId(), "My Blog", "my-blog", createdAt, earlier, null));
+    assertDomainFailure(() -> Project.reconstitute(
+        ProjectId.newId(), "My Blog", "my-blog", createdAt, createdAt, earlier));
   }
 
   @Test
