@@ -9,6 +9,7 @@ import io.oneasset.adapter.outbound.projectmember.persistence.ProjectMemberJpaRe
 import io.oneasset.adapter.outbound.user.persistence.UserJpaRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 @SpringBootTest(
@@ -16,7 +17,8 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
       "spring.autoconfigure.exclude="
           + "org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration,"
           + "org.springframework.boot.hibernate.autoconfigure.HibernateJpaAutoConfiguration,"
-          + "org.springframework.boot.flyway.autoconfigure.FlywayAutoConfiguration"
+          + "org.springframework.boot.flyway.autoconfigure.FlywayAutoConfiguration",
+      "COGNITO_ISSUER_URI=https://cognito-idp.ap-northeast-2.amazonaws.com/test"
     })
 class OneassetApiApplicationTests {
 
@@ -40,6 +42,9 @@ class OneassetApiApplicationTests {
 
   @MockitoBean
   private UserJpaRepository userJpaRepository;
+
+  @MockitoBean
+  private JwtDecoder jwtDecoder;
 
   @Test
   void contextLoads() {}

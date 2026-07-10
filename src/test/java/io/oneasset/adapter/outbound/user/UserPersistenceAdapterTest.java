@@ -21,9 +21,11 @@ class UserPersistenceAdapterTest {
   @Test
   void savesUserEntityConvertedFromDomain() {
     User user = User.createFromCognito("cognito-sub-1", "user@example.com", "Minseo");
+    when(userJpaRepository.save(any(UserEntity.class))).thenReturn(UserEntity.from(user));
 
-    adapter.save(user);
+    User saved = adapter.save(user);
 
+    assertThat(saved.getCognitoSub()).isEqualTo("cognito-sub-1");
     verify(userJpaRepository).save(any(UserEntity.class));
   }
 
@@ -41,15 +43,15 @@ class UserPersistenceAdapterTest {
   }
 
   @Test
-  void findsActiveUserByCognitoSub() {
+  void findsUserByCognitoSub() {
     User user = User.createFromCognito("cognito-sub-1", "user@example.com", "Minseo");
-    when(userJpaRepository.findByCognitoSubAndStatus("cognito-sub-1", UserStatus.ACTIVE))
+    when(userJpaRepository.findByCognitoSub("cognito-sub-1"))
         .thenReturn(Optional.of(UserEntity.from(user)));
 
-    Optional<User> found = adapter.findActiveByCognitoSub("cognito-sub-1");
+    Optional<User> found = adapter.findByCognitoSub("cognito-sub-1");
 
     assertThat(found).isPresent();
     assertThat(found.get().getCognitoSub()).isEqualTo("cognito-sub-1");
-    verify(userJpaRepository).findByCognitoSubAndStatus("cognito-sub-1", UserStatus.ACTIVE);
+    verify(userJpaRepository).findByCognitoSub("cognito-sub-1");
   }
 }
