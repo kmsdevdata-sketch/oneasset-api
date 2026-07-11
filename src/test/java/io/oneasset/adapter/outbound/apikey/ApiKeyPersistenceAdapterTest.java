@@ -26,6 +26,7 @@ class ApiKeyPersistenceAdapterTest {
   @Test
   void savesApiKeyEntityConvertedFromDomain() {
     ApiKey apiKey = createApiKey();
+    when(apiKeyJpaRepository.save(any(ApiKeyEntity.class))).thenReturn(ApiKeyEntity.from(apiKey));
 
     adapter.save(apiKey);
 

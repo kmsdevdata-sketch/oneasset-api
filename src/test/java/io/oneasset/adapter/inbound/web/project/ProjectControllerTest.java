@@ -7,12 +7,19 @@ import static org.mockito.Mockito.when;
 
 import io.oneasset.adapter.inbound.auth.JwtCurrentUserExtractor;
 import io.oneasset.adapter.inbound.response.ApiResponse;
+import io.oneasset.adapter.inbound.web.project.request.CreateApiKeyRequest;
 import io.oneasset.adapter.inbound.web.project.request.CreateProjectRequest;
+import io.oneasset.adapter.inbound.web.project.response.ApiKeyResponse;
 import io.oneasset.adapter.inbound.web.project.response.ProjectResponse;
+import io.oneasset.application.apikey.provided.ApiKeyUseCase;
+import io.oneasset.application.apikey.result.CreatedApiKey;
 import io.oneasset.application.project.command.CreateProjectCommand;
 import io.oneasset.application.project.provided.ProjectUseCase;
 import io.oneasset.application.user.command.CurrentUser;
 import io.oneasset.application.user.provided.UserSyncUseCase;
+import io.oneasset.domain.apikey.model.ApiKey;
+import io.oneasset.domain.apikey.vo.ApiKeyHash;
+import io.oneasset.domain.apikey.vo.ApiKeyPrefix;
 import io.oneasset.domain.project.model.Project;
 import io.oneasset.domain.user.model.User;
 import java.time.Instant;
@@ -24,10 +31,11 @@ class ProjectControllerTest {
 
   private final ProjectUseCase projectUseCase = mock(ProjectUseCase.class);
   private final UserSyncUseCase userSyncUseCase = mock(UserSyncUseCase.class);
+  private final ApiKeyUseCase apiKeyUseCase = mock(ApiKeyUseCase.class);
   private final JwtCurrentUserExtractor jwtCurrentUserExtractor =
       mock(JwtCurrentUserExtractor.class);
-  private final ProjectController projectController =
-      new ProjectController(projectUseCase, userSyncUseCase, jwtCurrentUserExtractor);
+  private final ProjectController projectController = new ProjectController(
+      projectUseCase, userSyncUseCase, apiKeyUseCase, jwtCurrentUserExtractor);
 
   @Test
   void createsProjectForCurrentUser() {
@@ -84,6 +92,35 @@ class ProjectControllerTest {
     assertThat(response.success()).isTrue();
     assertThat(response.data().id()).isEqualTo(project.getId().toString());
     verify(projectUseCase).findById(user.getId(), project.getId());
+  }
+
+  @Test
+  void createsApiKeyForCurrentUserProject() {
+    Jwt jwt = createJwt();
+    CurrentUser currentUser = new CurrentUser("cognito-sub-1", "user@example.com", "Minseo");
+    User user = User.createFromCognito("cognito-sub-1", "user@example.com", "Minseo");
+    Project project = Project.create("My Blog", "my-blog");
+    ApiKey apiKey = ApiKey.create(
+        project.getId(), "Production", ApiKeyPrefix.of("oa_live_raw-key"), ApiKeyHash.of("hash"));
+    CreatedApiKey createdApiKey = new CreatedApiKey(apiKey, "oa_live_raw-key");
+    when(jwtCurrentUserExtractor.extract(jwt)).thenReturn(currentUser);
+    when(userSyncUseCase.findOrCreate(currentUser)).thenReturn(user);
+    when(apiKeyUseCase.create(
+            user.getId(),
+            new CreateApiKeyRequest("Production").toCommand(project.getId().toString())))
+        .thenReturn(createdApiKey);
+
+    ApiResponse<ApiKeyResponse> response = projectController.createApiKey(
+        jwt, project.getId().toString(), new CreateApiKeyRequest("Production"));
+
+    assertThat(response.success()).isTrue();
+    assertThat(response.data().apiKey()).isEqualTo("oa_live_raw-key");
+    assertThat(response.data().prefix()).isEqualTo("oa_live_raw-key");
+    assertThat(response.data().status()).isEqualTo("ACTIVE");
+    verify(apiKeyUseCase)
+        .create(
+            user.getId(),
+            new CreateApiKeyRequest("Production").toCommand(project.getId().toString()));
   }
 
   private static Jwt createJwt() {
