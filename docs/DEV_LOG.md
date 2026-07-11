@@ -179,3 +179,16 @@ DB 조회
   - `DataAccessException`
   - 예상하지 못한 `Exception`
 - 현재 단계에서는 레이어별 예외 상속구조를 만들지 않고, API 의미 기준의 ErrorCode를 사용한다.
+
+## 2026-07-11 - api-key-api 
+- API Key 생성 
+  - Project 생성메서드와 메서드명이 겹쳐 프로젝트 생성 메서드 `create()` -> `createProject()`변경 
+  - ApiKeyHash를 생성하는 포트를 별도로 생성 어플리케이션에서 받아서 사용하면 될듯함 
+    - 근데 생성 책임을 어디서 가져갈지 고민인데 포트 분리는 하되 서비스단에서 생성이 아니라 도메인 엔진에서 처리하기로 결정 
+    - port <-> service-(구현체) <-> 도메인 엔진 
+    - Engine
+      - rawkey 생성 
+      - hash생성 (rawkey,server secret) - HMAC-SHA256 사용 
+      - DB에는 hash저장 - 사용자에게 rawkey일회성 제공 
+- API Key 목록 조회 
+- API Key 폐기

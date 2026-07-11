@@ -41,7 +41,7 @@ class ProjectControllerTest {
         .thenReturn(project);
 
     ApiResponse<ProjectResponse> response =
-        projectController.create(jwt, new CreateProjectRequest("My Blog"));
+        projectController.createProject(jwt, new CreateProjectRequest("My Blog"));
 
     assertThat(response.success()).isTrue();
     assertThat(response.data().slug()).isEqualTo("my-blog");
