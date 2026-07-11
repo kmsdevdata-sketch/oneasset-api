@@ -14,6 +14,7 @@ import io.oneasset.domain.project.vo.ProjectId;
 import io.oneasset.domain.user.vo.UserId;
 import io.oneasset.exception.BaseException;
 import io.oneasset.exception.code.ProjectErrorCode;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -41,6 +42,15 @@ public class ApiKeyService implements ApiKeyUseCase {
     ApiKey savedApiKey = apiKeyPersistencePort.save(apiKey);
 
     return new CreatedApiKey(savedApiKey, generatedApiKey.rawKey());
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public List<ApiKey> findAll(UserId userId, String projectIdValue) {
+    ProjectId projectId = ProjectId.fromString(projectIdValue);
+    ensureProjectMember(projectId, userId);
+
+    return apiKeyPersistencePort.findAllActiveByProjectId(projectId);
   }
 
   private void ensureProjectMember(ProjectId projectId, UserId userId) {

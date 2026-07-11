@@ -11,6 +11,7 @@ import io.oneasset.application.apikey.result.CreatedApiKey;
 import io.oneasset.application.project.provided.ProjectUseCase;
 import io.oneasset.application.user.command.CurrentUser;
 import io.oneasset.application.user.provided.UserSyncUseCase;
+import io.oneasset.domain.apikey.model.ApiKey;
 import io.oneasset.domain.project.model.Project;
 import io.oneasset.domain.project.vo.ProjectId;
 import io.oneasset.domain.user.model.User;
@@ -57,9 +58,16 @@ public class ProjectController {
 
     return ApiResponse.ok(ProjectResponse.from(project));
   }
-  //
-  //  @GetMapping("/{projectId}/api-keys")
-  //  public ApiResponse<>
+
+  @GetMapping("/{projectId}/api-keys")
+  public ApiResponse<List<ApiKeyResponse>> listApiKeys(
+      @AuthenticationPrincipal Jwt jwt, @PathVariable String projectId) {
+    User user = currentUser(jwt);
+    List<ApiKey> apiKeys = apiKeyUseCase.findAll(user.getId(), projectId);
+    List<ApiKeyResponse> response = apiKeys.stream().map(ApiKeyResponse::from).toList();
+
+    return ApiResponse.ok(response);
+  }
 
   @PostMapping("/{projectId}/api-keys")
   public ApiResponse<ApiKeyResponse> createApiKey(
