@@ -123,6 +123,29 @@ class ProjectControllerTest {
             new CreateApiKeyRequest("Production").toCommand(project.getId().toString()));
   }
 
+  @Test
+  void returnsCurrentUserProjectApiKeysWithoutRawKey() {
+    Jwt jwt = createJwt();
+    CurrentUser currentUser = new CurrentUser("cognito-sub-1", "user@example.com", "Minseo");
+    User user = User.createFromCognito("cognito-sub-1", "user@example.com", "Minseo");
+    Project project = Project.create("My Blog", "my-blog");
+    ApiKey apiKey = ApiKey.create(
+        project.getId(), "Production", ApiKeyPrefix.of("oa_live_raw-key"), ApiKeyHash.of("hash"));
+    when(jwtCurrentUserExtractor.extract(jwt)).thenReturn(currentUser);
+    when(userSyncUseCase.findOrCreate(currentUser)).thenReturn(user);
+    when(apiKeyUseCase.findAll(user.getId(), project.getId().toString()))
+        .thenReturn(List.of(apiKey));
+
+    ApiResponse<List<ApiKeyResponse>> response =
+        projectController.listApiKeys(jwt, project.getId().toString());
+
+    assertThat(response.success()).isTrue();
+    assertThat(response.data()).hasSize(1);
+    assertThat(response.data().getFirst().apiKey()).isNull();
+    assertThat(response.data().getFirst().prefix()).isEqualTo("oa_live_raw-key");
+    verify(apiKeyUseCase).findAll(user.getId(), project.getId().toString());
+  }
+
   private static Jwt createJwt() {
     return Jwt.withTokenValue("token")
         .header("alg", "none")

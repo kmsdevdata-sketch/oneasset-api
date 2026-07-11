@@ -14,11 +14,14 @@ import io.oneasset.application.project.required.ProjectPersistencePort;
 import io.oneasset.domain.apikey.engine.ApiKeyGenerator;
 import io.oneasset.domain.apikey.engine.GenerateApiKey;
 import io.oneasset.domain.apikey.model.ApiKey;
+import io.oneasset.domain.apikey.vo.ApiKeyHash;
+import io.oneasset.domain.apikey.vo.ApiKeyPrefix;
 import io.oneasset.domain.project.model.Project;
 import io.oneasset.domain.projectmember.model.ProjectMember;
 import io.oneasset.domain.user.vo.UserId;
 import io.oneasset.exception.BaseException;
 import io.oneasset.exception.code.ProjectErrorCode;
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -71,5 +74,25 @@ class ApiKeyServiceTest {
         .isInstanceOf(BaseException.class)
         .extracting("errorCode")
         .isEqualTo(ProjectErrorCode.PROJECT_ACCESS_DENIED);
+  }
+
+  @Test
+  void findsActiveApiKeysAfterProjectMembershipCheck() {
+    UserId userId = UserId.newId();
+    Project project = Project.create("My Blog", "my-blog");
+    ProjectMember member = ProjectMember.createOwner(project.getId(), userId);
+    ApiKey apiKey = ApiKey.create(
+        project.getId(), "Production", ApiKeyPrefix.of("oa_live_key"), ApiKeyHash.of("hash"));
+    when(projectPersistencePort.findMember(project.getId(), userId))
+        .thenReturn(Optional.of(member));
+    when(apiKeyPersistencePort.findAllActiveByProjectId(project.getId()))
+        .thenReturn(List.of(apiKey));
+
+    List<ApiKey> apiKeys = apiKeyService.findAll(userId, project.getId().toString());
+
+    assertThat(apiKeys).hasSize(1);
+    assertThat(apiKeys.getFirst().getId()).isEqualTo(apiKey.getId());
+    verify(projectPersistencePort).findMember(project.getId(), userId);
+    verify(apiKeyPersistencePort).findAllActiveByProjectId(project.getId());
   }
 }
