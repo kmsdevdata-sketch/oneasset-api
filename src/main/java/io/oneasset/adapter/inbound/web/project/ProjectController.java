@@ -6,12 +6,11 @@ import io.oneasset.adapter.inbound.web.project.request.CreateApiKeyRequest;
 import io.oneasset.adapter.inbound.web.project.request.CreateProjectRequest;
 import io.oneasset.adapter.inbound.web.project.response.ApiKeyResponse;
 import io.oneasset.adapter.inbound.web.project.response.ProjectResponse;
-import io.oneasset.application.apikey.provided.ApiKeyHashUseCase;
 import io.oneasset.application.apikey.provided.ApiKeyUseCase;
+import io.oneasset.application.apikey.result.CreatedApiKey;
 import io.oneasset.application.project.provided.ProjectUseCase;
 import io.oneasset.application.user.command.CurrentUser;
 import io.oneasset.application.user.provided.UserSyncUseCase;
-import io.oneasset.domain.apikey.model.ApiKey;
 import io.oneasset.domain.project.model.Project;
 import io.oneasset.domain.project.vo.ProjectId;
 import io.oneasset.domain.user.model.User;
@@ -30,7 +29,6 @@ public class ProjectController {
   private final ProjectUseCase projectUseCase;
   private final UserSyncUseCase userSyncUseCase;
   private final ApiKeyUseCase apiKeyUseCase;
-  private final ApiKeyHashUseCase apiKeyHashUseCase;
   private final JwtCurrentUserExtractor jwtCurrentUserExtractor;
 
   @PostMapping
@@ -59,25 +57,23 @@ public class ProjectController {
 
     return ApiResponse.ok(ProjectResponse.from(project));
   }
-//
-//  @GetMapping("/{projectId}/api-keys")
-//  public ApiResponse<>
+  //
+  //  @GetMapping("/{projectId}/api-keys")
+  //  public ApiResponse<>
 
   @PostMapping("/{projectId}/api-keys")
   public ApiResponse<ApiKeyResponse> createApiKey(
-          @AuthenticationPrincipal Jwt jwt,
-          @PathVariable String projectId,
-          @Valid @RequestBody CreateApiKeyRequest request
-  ) {
+      @AuthenticationPrincipal Jwt jwt,
+      @PathVariable String projectId,
+      @Valid @RequestBody CreateApiKeyRequest request) {
     User user = currentUser(jwt);
-     apiKeyHashUseCase.createHash();
-    ApiKey apiKey = apiKeyUseCase.create(user.getId(),request.toCommand(projectId));
 
-    return ApiResponse.ok(ApiKeyResponse.from(apiKey)); // TODO:apikey넣어줘야함
+    CreatedApiKey apiKey = apiKeyUseCase.create(user.getId(), request.toCommand(projectId));
+
+    return ApiResponse.ok(ApiKeyResponse.fromCreated(apiKey));
   }
 
-//  @DeleteMapping("/{projectId}/api-keys/{apiKeyId}")
-
+  //  @DeleteMapping("/{projectId}/api-keys/{apiKeyId}")
 
   private User currentUser(Jwt jwt) {
     CurrentUser currentUser = jwtCurrentUserExtractor.extract(jwt);

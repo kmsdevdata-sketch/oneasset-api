@@ -4,5 +4,5 @@ import io.oneasset.domain.apikey.model.ApiKey;
 
 public interface ApiKeyPersistencePort {
 
-    ApiKey save(ApiKey apiKey);
+  ApiKey save(ApiKey apiKey);
 }
