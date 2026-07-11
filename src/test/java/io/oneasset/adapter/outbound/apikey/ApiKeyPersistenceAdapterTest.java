@@ -39,7 +39,7 @@ class ApiKeyPersistenceAdapterTest {
     when(apiKeyJpaRepository.findByIdAndStatus(apiKey.getId().value(), ApiKeyStatus.ACTIVE))
         .thenReturn(Optional.of(ApiKeyEntity.from(apiKey)));
 
-    Optional<ApiKey> found = adapter.findActiveById(apiKey.getId().value());
+    Optional<ApiKey> found = adapter.findActiveById(apiKey.getId());
 
     assertThat(found).isPresent();
     assertThat(found.get().getId()).isEqualTo(apiKey.getId());

@@ -20,6 +20,7 @@ import io.oneasset.domain.project.model.Project;
 import io.oneasset.domain.projectmember.model.ProjectMember;
 import io.oneasset.domain.user.vo.UserId;
 import io.oneasset.exception.BaseException;
+import io.oneasset.exception.code.ApiKeyErrorCode;
 import io.oneasset.exception.code.ProjectErrorCode;
 import java.util.List;
 import java.util.Optional;
@@ -94,5 +95,46 @@ class ApiKeyServiceTest {
     assertThat(apiKeys.getFirst().getId()).isEqualTo(apiKey.getId());
     verify(projectPersistencePort).findMember(project.getId(), userId);
     verify(apiKeyPersistencePort).findAllActiveByProjectId(project.getId());
+  }
+
+  @Test
+  void revokesActiveApiKeyAfterProjectMembershipCheck() {
+    UserId userId = UserId.newId();
+    Project project = Project.create("My Blog", "my-blog");
+    ProjectMember member = ProjectMember.createOwner(project.getId(), userId);
+    ApiKey apiKey = ApiKey.create(
+        project.getId(), "Production", ApiKeyPrefix.of("oa_live_key"), ApiKeyHash.of("hash"));
+    when(projectPersistencePort.findMember(project.getId(), userId))
+        .thenReturn(Optional.of(member));
+    when(apiKeyPersistencePort.findActiveById(apiKey.getId())).thenReturn(Optional.of(apiKey));
+    when(apiKeyPersistencePort.save(any(ApiKey.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
+
+    ApiKey revokedApiKey =
+        apiKeyService.revoke(userId, project.getId().toString(), apiKey.getId().toString());
+
+    assertThat(revokedApiKey.isRevoked()).isTrue();
+    assertThat(revokedApiKey.getRevokedAt()).isNotNull();
+    verify(projectPersistencePort).findMember(project.getId(), userId);
+    verify(apiKeyPersistencePort).findActiveById(apiKey.getId());
+    verify(apiKeyPersistencePort).save(apiKey);
+  }
+
+  @Test
+  void throwsNotFoundWhenApiKeyDoesNotExist() {
+    UserId userId = UserId.newId();
+    Project project = Project.create("My Blog", "my-blog");
+    ProjectMember member = ProjectMember.createOwner(project.getId(), userId);
+    ApiKey apiKey = ApiKey.create(
+        project.getId(), "Production", ApiKeyPrefix.of("oa_live_key"), ApiKeyHash.of("hash"));
+    when(projectPersistencePort.findMember(project.getId(), userId))
+        .thenReturn(Optional.of(member));
+    when(apiKeyPersistencePort.findActiveById(apiKey.getId())).thenReturn(Optional.empty());
+
+    assertThatThrownBy(() -> apiKeyService.revoke(
+            userId, project.getId().toString(), apiKey.getId().toString()))
+        .isInstanceOf(BaseException.class)
+        .extracting("errorCode")
+        .isEqualTo(ApiKeyErrorCode.API_KEY_NOT_FOUND);
   }
 }

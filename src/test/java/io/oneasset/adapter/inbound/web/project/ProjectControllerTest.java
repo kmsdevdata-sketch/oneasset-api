@@ -146,6 +146,31 @@ class ProjectControllerTest {
     verify(apiKeyUseCase).findAll(user.getId(), project.getId().toString());
   }
 
+  @Test
+  void revokesCurrentUserProjectApiKeyWithoutRawKey() {
+    Jwt jwt = createJwt();
+    CurrentUser currentUser = new CurrentUser("cognito-sub-1", "user@example.com", "Minseo");
+    User user = User.createFromCognito("cognito-sub-1", "user@example.com", "Minseo");
+    Project project = Project.create("My Blog", "my-blog");
+    ApiKey apiKey = ApiKey.create(
+        project.getId(), "Production", ApiKeyPrefix.of("oa_live_raw-key"), ApiKeyHash.of("hash"));
+    apiKey.revoke();
+    when(jwtCurrentUserExtractor.extract(jwt)).thenReturn(currentUser);
+    when(userSyncUseCase.findOrCreate(currentUser)).thenReturn(user);
+    when(apiKeyUseCase.revoke(
+            user.getId(), project.getId().toString(), apiKey.getId().toString()))
+        .thenReturn(apiKey);
+
+    ApiResponse<ApiKeyResponse> response = projectController.revokeApiKey(
+        jwt, project.getId().toString(), apiKey.getId().toString());
+
+    assertThat(response.success()).isTrue();
+    assertThat(response.data().apiKey()).isNull();
+    assertThat(response.data().status()).isEqualTo("REVOKED");
+    verify(apiKeyUseCase)
+        .revoke(user.getId(), project.getId().toString(), apiKey.getId().toString());
+  }
+
   private static Jwt createJwt() {
     return Jwt.withTokenValue("token")
         .header("alg", "none")
