@@ -9,10 +9,12 @@ import io.oneasset.domain.apikey.engine.ApiKeyGenerator;
 import io.oneasset.domain.apikey.engine.GenerateApiKey;
 import io.oneasset.domain.apikey.model.ApiKey;
 import io.oneasset.domain.apikey.vo.ApiKeyHash;
+import io.oneasset.domain.apikey.vo.ApiKeyId;
 import io.oneasset.domain.apikey.vo.ApiKeyPrefix;
 import io.oneasset.domain.project.vo.ProjectId;
 import io.oneasset.domain.user.vo.UserId;
 import io.oneasset.exception.BaseException;
+import io.oneasset.exception.code.ApiKeyErrorCode;
 import io.oneasset.exception.code.ProjectErrorCode;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -53,9 +55,30 @@ public class ApiKeyService implements ApiKeyUseCase {
     return apiKeyPersistencePort.findAllActiveByProjectId(projectId);
   }
 
+  @Override
+  @Transactional
+  public ApiKey revoke(UserId userId, String projectIdValue, String apiKeyIdValue) {
+    ProjectId projectId = ProjectId.fromString(projectIdValue);
+    ensureProjectMember(projectId, userId);
+
+    ApiKey apiKey = apiKeyPersistencePort
+        .findActiveById(ApiKeyId.fromString(apiKeyIdValue))
+        .orElseThrow(() -> new BaseException(ApiKeyErrorCode.API_KEY_NOT_FOUND));
+    ensureApiKeyBelongsToProject(apiKey, projectId);
+
+    apiKey.revoke();
+    return apiKeyPersistencePort.save(apiKey);
+  }
+
   private void ensureProjectMember(ProjectId projectId, UserId userId) {
     projectPersistencePort
         .findMember(projectId, userId)
         .orElseThrow(() -> new BaseException(ProjectErrorCode.PROJECT_ACCESS_DENIED));
+  }
+
+  private void ensureApiKeyBelongsToProject(ApiKey apiKey, ProjectId projectId) {
+    if (!apiKey.getProjectId().equals(projectId)) {
+      throw new BaseException(ApiKeyErrorCode.API_KEY_NOT_FOUND);
+    }
   }
 }

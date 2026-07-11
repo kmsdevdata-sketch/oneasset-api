@@ -81,7 +81,16 @@ public class ProjectController {
     return ApiResponse.ok(ApiKeyResponse.fromCreated(apiKey));
   }
 
-  //  @DeleteMapping("/{projectId}/api-keys/{apiKeyId}")
+  @DeleteMapping("/{projectId}/api-keys/{apiKeyId}")
+  public ApiResponse<ApiKeyResponse> revokeApiKey(
+      @AuthenticationPrincipal Jwt jwt,
+      @PathVariable String projectId,
+      @PathVariable String apiKeyId) {
+    User user = currentUser(jwt);
+    ApiKey apiKey = apiKeyUseCase.revoke(user.getId(), projectId, apiKeyId);
+
+    return ApiResponse.ok(ApiKeyResponse.from(apiKey));
+  }
 
   private User currentUser(Jwt jwt) {
     CurrentUser currentUser = jwtCurrentUserExtractor.extract(jwt);

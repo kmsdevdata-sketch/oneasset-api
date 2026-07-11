@@ -6,6 +6,11 @@ import org.springframework.http.HttpStatus;
 
 @Getter
 public enum ApiKeyErrorCode implements ErrorCode {
+  API_KEY_NOT_FOUND(
+      "API_KEY_NOT_FOUND_404",
+      "API key not found",
+      HttpStatus.NOT_FOUND,
+      "/errors/api-key/not-found"),
   REVOKED_API_KEY_CANNOT_BE_CHANGED(
       "API_KEY_REVOKED_CANNOT_BE_CHANGED_409",
       "Revoked API key cannot be changed",

@@ -11,4 +11,6 @@ public interface ApiKeyUseCase {
   CreatedApiKey create(UserId userId, CreateApiKeyCommand command);
 
   List<ApiKey> findAll(UserId userId, String projectId);
+
+  ApiKey revoke(UserId userId, String projectId, String apiKeyId);
 }

@@ -5,11 +5,11 @@ import io.oneasset.adapter.outbound.apikey.persistence.ApiKeyJpaRepository;
 import io.oneasset.application.apikey.required.ApiKeyPersistencePort;
 import io.oneasset.domain.apikey.model.ApiKey;
 import io.oneasset.domain.apikey.vo.ApiKeyHash;
+import io.oneasset.domain.apikey.vo.ApiKeyId;
 import io.oneasset.domain.apikey.vo.ApiKeyStatus;
 import io.oneasset.domain.project.vo.ProjectId;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,9 +26,9 @@ public class ApiKeyPersistenceAdapter implements ApiKeyPersistencePort {
   }
 
   @Transactional(readOnly = true)
-  public Optional<ApiKey> findActiveById(UUID apiKeyId) {
+  public Optional<ApiKey> findActiveById(ApiKeyId apiKeyId) {
     return apiKeyJpaRepository
-        .findByIdAndStatus(apiKeyId, ApiKeyStatus.ACTIVE)
+        .findByIdAndStatus(apiKeyId.value(), ApiKeyStatus.ACTIVE)
         .map(ApiKeyEntity::toDomain);
   }
 
