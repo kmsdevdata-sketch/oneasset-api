@@ -1,6 +1,7 @@
 package io.oneasset.application.apikey.required;
 
 import io.oneasset.domain.apikey.model.ApiKey;
+import io.oneasset.domain.apikey.vo.ApiKeyHash;
 import io.oneasset.domain.apikey.vo.ApiKeyId;
 import io.oneasset.domain.project.vo.ProjectId;
 import java.util.List;
@@ -13,4 +14,6 @@ public interface ApiKeyPersistencePort {
   Optional<ApiKey> findActiveById(ApiKeyId apiKeyId);
 
   List<ApiKey> findAllActiveByProjectId(ProjectId projectId);
+
+  Optional<ApiKey> findActiveByHash(ApiKeyHash hash);
 }

@@ -49,6 +49,7 @@ MVP1 초기 응답에는 `detail`을 포함하지 않는다.
 | 400 | `COMMON_INVALID_INPUT_400` | `/errors/common/invalid-input` | 요청 값 또는 도메인 입력값 검증 실패 |
 | 400 | `COMMON_INVALID_ID_400` | `/errors/common/invalid-id` | ID 형식 오류 |
 | 401 | `AUTH_REQUIRED_JWT_CLAIM_MISSING_401` | `/errors/auth/required-jwt-claim-missing` | JWT 필수 claim 누락 |
+| 401 | `AUTH_INVALID_API_KEY_401` | `/errors/auth/invalid-api-key` | Developer API Key 누락 또는 불일치 |
 | 403 | `PROJECT_ACCESS_DENIED_403` | `/errors/project/access-denied` | 프로젝트 접근 권한 없음 |
 | 404 | `PROJECT_NOT_FOUND_404` | `/errors/project/not-found` | Project 없음 |
 | 409 | `PROJECT_DELETED_CANNOT_BE_CHANGED_409` | `/errors/project/deleted-cannot-be-changed` | 삭제된 Project 변경 시도 |

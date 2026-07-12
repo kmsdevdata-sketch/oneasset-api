@@ -1,8 +1,10 @@
-package io.oneasset.application.apikey;
+package io.oneasset.application.apikey.service;
 
 import io.oneasset.application.apikey.command.CreateApiKeyCommand;
+import io.oneasset.application.apikey.provided.ApiKeyAuthenticationUseCase;
 import io.oneasset.application.apikey.provided.ApiKeyUseCase;
 import io.oneasset.application.apikey.required.ApiKeyPersistencePort;
+import io.oneasset.application.apikey.result.AuthenticatedApiKey;
 import io.oneasset.application.apikey.result.CreatedApiKey;
 import io.oneasset.application.project.required.ProjectPersistencePort;
 import io.oneasset.domain.apikey.engine.ApiKeyGenerator;
@@ -15,6 +17,7 @@ import io.oneasset.domain.project.vo.ProjectId;
 import io.oneasset.domain.user.vo.UserId;
 import io.oneasset.exception.BaseException;
 import io.oneasset.exception.code.ApiKeyErrorCode;
+import io.oneasset.exception.code.AuthErrorCode;
 import io.oneasset.exception.code.ProjectErrorCode;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -23,7 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
-public class ApiKeyService implements ApiKeyUseCase {
+public class ApiKeyService implements ApiKeyUseCase, ApiKeyAuthenticationUseCase {
 
   private final ApiKeyPersistencePort apiKeyPersistencePort;
   private final ProjectPersistencePort projectPersistencePort;
@@ -68,6 +71,22 @@ public class ApiKeyService implements ApiKeyUseCase {
 
     apiKey.revoke();
     return apiKeyPersistencePort.save(apiKey);
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public AuthenticatedApiKey authenticate(String rawKey) {
+    if (rawKey == null || rawKey.isBlank()) {
+      throw new BaseException(AuthErrorCode.INVALID_API_KEY);
+    }
+
+    String hash = apiKeyGenerator.hash(rawKey);
+
+    ApiKey apiKey = apiKeyPersistencePort
+        .findActiveByHash(ApiKeyHash.of(hash))
+        .orElseThrow(() -> new BaseException(AuthErrorCode.INVALID_API_KEY));
+
+    return AuthenticatedApiKey.from(apiKey.getProjectId().toString());
   }
 
   private void ensureProjectMember(ProjectId projectId, UserId userId) {

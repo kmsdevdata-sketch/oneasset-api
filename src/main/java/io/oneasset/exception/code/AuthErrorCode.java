@@ -10,7 +10,12 @@ public enum AuthErrorCode implements ErrorCode {
       "AUTH_REQUIRED_JWT_CLAIM_MISSING_401",
       "Required JWT claim is missing",
       HttpStatus.UNAUTHORIZED,
-      "/errors/auth/required-jwt-claim-missing");
+      "/errors/auth/required-jwt-claim-missing"),
+  INVALID_API_KEY(
+      "AUTH_INVALID_API_KEY_401",
+      "Invalid API key",
+      HttpStatus.UNAUTHORIZED,
+      "/errors/auth/invalid-api-key");
 
   private final String code;
   private final String title;
