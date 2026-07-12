@@ -9,7 +9,9 @@ import static org.mockito.Mockito.when;
 
 import io.oneasset.application.apikey.command.CreateApiKeyCommand;
 import io.oneasset.application.apikey.required.ApiKeyPersistencePort;
+import io.oneasset.application.apikey.result.AuthenticatedApiKey;
 import io.oneasset.application.apikey.result.CreatedApiKey;
+import io.oneasset.application.apikey.service.ApiKeyService;
 import io.oneasset.application.project.required.ProjectPersistencePort;
 import io.oneasset.domain.apikey.engine.ApiKeyGenerator;
 import io.oneasset.domain.apikey.engine.GenerateApiKey;
@@ -21,6 +23,7 @@ import io.oneasset.domain.projectmember.model.ProjectMember;
 import io.oneasset.domain.user.vo.UserId;
 import io.oneasset.exception.BaseException;
 import io.oneasset.exception.code.ApiKeyErrorCode;
+import io.oneasset.exception.code.AuthErrorCode;
 import io.oneasset.exception.code.ProjectErrorCode;
 import java.util.List;
 import java.util.Optional;
@@ -136,5 +139,41 @@ class ApiKeyServiceTest {
         .isInstanceOf(BaseException.class)
         .extracting("errorCode")
         .isEqualTo(ApiKeyErrorCode.API_KEY_NOT_FOUND);
+  }
+
+  @Test
+  void authenticatesRawApiKeyAndReturnsProjectId() {
+    Project project = Project.create("My Blog", "my-blog");
+    ApiKey apiKey = ApiKey.create(
+        project.getId(), "Production", ApiKeyPrefix.of("oa_live_key"), ApiKeyHash.of("hash-value"));
+    when(apiKeyGenerator.hash("oa_live_raw-key")).thenReturn("hash-value");
+    when(apiKeyPersistencePort.findActiveByHash(ApiKeyHash.of("hash-value")))
+        .thenReturn(Optional.of(apiKey));
+
+    AuthenticatedApiKey authenticatedApiKey = apiKeyService.authenticate("oa_live_raw-key");
+
+    assertThat(authenticatedApiKey.projectId()).isEqualTo(project.getId().toString());
+    verify(apiKeyGenerator).hash("oa_live_raw-key");
+    verify(apiKeyPersistencePort).findActiveByHash(ApiKeyHash.of("hash-value"));
+  }
+
+  @Test
+  void rejectsBlankRawApiKey() {
+    assertThatThrownBy(() -> apiKeyService.authenticate(" "))
+        .isInstanceOf(BaseException.class)
+        .extracting("errorCode")
+        .isEqualTo(AuthErrorCode.INVALID_API_KEY);
+  }
+
+  @Test
+  void rejectsUnknownRawApiKeyHash() {
+    when(apiKeyGenerator.hash("oa_live_raw-key")).thenReturn("hash-value");
+    when(apiKeyPersistencePort.findActiveByHash(ApiKeyHash.of("hash-value")))
+        .thenReturn(Optional.empty());
+
+    assertThatThrownBy(() -> apiKeyService.authenticate("oa_live_raw-key"))
+        .isInstanceOf(BaseException.class)
+        .extracting("errorCode")
+        .isEqualTo(AuthErrorCode.INVALID_API_KEY);
   }
 }
