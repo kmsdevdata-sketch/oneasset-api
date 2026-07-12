@@ -185,10 +185,15 @@ DB 조회
   - Project 생성메서드와 메서드명이 겹쳐 프로젝트 생성 메서드 `create()` -> `createProject()`변경 
   - ApiKeyHash를 생성하는 포트를 별도로 생성 어플리케이션에서 받아서 사용하면 될듯함 
     - 근데 생성 책임을 어디서 가져갈지 고민인데 포트 분리는 하되 서비스단에서 생성이 아니라 도메인 엔진에서 처리하기로 결정 
-    - port <-> service-(구현체) <-> 도메인 엔진 
+    - port <-> service-(구현체) <-> 도메인 엔진
+    - create - 도메인 ApiKey생성 
+      - generator rawkey랑 해시 뱉어줘야함
+      - 해시생성 유즈케이스 분리하면 의존이 강하게 묶이고 컨트롤러에서 조합하게 되니 
+      - Create에서 우선은 Engine사용하여 생성한뒤 나중에 별도 필요시 분리 or 파사드 재조립 
     - Engine
       - rawkey 생성 
       - hash생성 (rawkey,server secret) - HMAC-SHA256 사용 
+      - prefix생성
       - DB에는 hash저장 - 사용자에게 rawkey일회성 제공 
 - API Key 목록 조회 
 - API Key 폐기
