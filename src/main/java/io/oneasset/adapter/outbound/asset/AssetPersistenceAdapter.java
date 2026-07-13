@@ -2,6 +2,7 @@ package io.oneasset.adapter.outbound.asset;
 
 import io.oneasset.adapter.outbound.asset.entity.AssetEntity;
 import io.oneasset.adapter.outbound.asset.persistence.AssetJpaRepository;
+import io.oneasset.application.asset.required.AssetPersistencePort;
 import io.oneasset.domain.asset.model.Asset;
 import io.oneasset.domain.project.vo.ProjectId;
 import java.util.List;
@@ -14,12 +15,12 @@ import org.springframework.transaction.annotation.Transactional;
 @Component
 @Transactional
 @RequiredArgsConstructor
-public class AssetPersistenceAdapter {
+public class AssetPersistenceAdapter implements AssetPersistencePort {
 
   private final AssetJpaRepository assetJpaRepository;
 
-  public void save(Asset asset) {
-    assetJpaRepository.save(AssetEntity.from(asset));
+  public Asset register(Asset asset) {
+    return assetJpaRepository.save(AssetEntity.from(asset)).toDomain();
   }
 
   @Transactional(readOnly = true)

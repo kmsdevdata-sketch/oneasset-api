@@ -23,9 +23,12 @@ class AssetPersistenceAdapterTest {
   @Test
   void savesAssetEntityConvertedFromDomain() {
     Asset asset = createAsset();
+    when(assetJpaRepository.save(any(AssetEntity.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
 
-    adapter.save(asset);
+    Asset savedAsset = adapter.register(asset);
 
+    assertThat(savedAsset.getId()).isEqualTo(asset.getId());
     verify(assetJpaRepository).save(any(AssetEntity.class));
   }
 
