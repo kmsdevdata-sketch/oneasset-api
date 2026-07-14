@@ -5,5 +5,5 @@ import io.oneasset.application.asset.result.RegistryAsset;
 
 public interface AssetRegisterUseCase {
 
-  RegistryAsset register(RegisterAssetCommand command);
+  RegistryAsset register(RegisterAssetCommand registerCommand);
 }

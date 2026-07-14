@@ -61,6 +61,11 @@ dependencies {
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.security:spring-security-test")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+
+    // =========================
+    // AWS
+    // =========================
+    implementation("io.awspring.cloud:spring-cloud-aws-starter-s3:4.0.2")
 }
 
 tasks.withType<Test> {

@@ -7,6 +7,7 @@ import io.oneasset.application.apikey.provided.ApiKeyAuthenticationUseCase;
 import io.oneasset.application.asset.command.RegisterAssetCommand;
 import io.oneasset.application.asset.provided.AssetRegisterUseCase;
 import io.oneasset.application.asset.result.RegistryAsset;
+import java.io.IOException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -30,8 +31,10 @@ public class DeveloperAssetController {
       @RequestPart("file") MultipartFile file,
       @RequestParam(value = "key", required = false) String key,
       @RequestParam(value = "fileName", required = false) String fileName,
-      @RequestHeader("X-OneAsset-Api-Key") String rawKey) {
+      @RequestHeader("X-OneAsset-Api-Key") String rawKey)
+      throws IOException {
     String projectId = apiKeyAuthenticationUseCase.authenticate(rawKey).projectId();
+
     CreateAssetMetadataRequest metadata = new CreateAssetMetadataRequest(key, fileName);
     RegistryAsset asset = assetRegisterUseCase.register(toCommand(projectId, file, metadata));
 
@@ -39,11 +42,13 @@ public class DeveloperAssetController {
   }
 
   private RegisterAssetCommand toCommand(
-      String projectId, MultipartFile file, CreateAssetMetadataRequest metadata) {
+      String projectId, MultipartFile file, CreateAssetMetadataRequest metadata)
+      throws IOException {
     return new RegisterAssetCommand(
         projectId,
         metadata == null ? null : metadata.key(),
         metadata == null ? null : metadata.fileName(),
+        file.getInputStream(),
         file.getOriginalFilename(),
         file.getContentType(),
         file.getSize());

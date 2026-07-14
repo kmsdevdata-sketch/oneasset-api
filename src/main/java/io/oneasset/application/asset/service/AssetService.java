@@ -3,8 +3,10 @@ package io.oneasset.application.asset.service;
 import static io.oneasset.domain.common.DomainValidator.requireText;
 
 import io.oneasset.application.asset.command.RegisterAssetCommand;
+import io.oneasset.application.asset.command.StoreAssetCommand;
 import io.oneasset.application.asset.provided.AssetRegisterUseCase;
 import io.oneasset.application.asset.required.AssetPersistencePort;
+import io.oneasset.application.asset.required.AssetStoragePort;
 import io.oneasset.application.asset.result.RegistryAsset;
 import io.oneasset.domain.asset.model.Asset;
 import io.oneasset.domain.project.vo.ProjectId;
@@ -19,12 +21,15 @@ import org.springframework.transaction.annotation.Transactional;
 public class AssetService implements AssetRegisterUseCase {
 
   private final AssetPersistencePort assetPersistencePort;
+  private final AssetStoragePort assetStoragePort;
   private final String assetBucket;
 
   public AssetService(
       AssetPersistencePort assetPersistencePort,
+      AssetStoragePort assetStoragePort,
       @Value("${oneasset.storage.asset-bucket:local-oneasset-assets}") String assetBucket) {
     this.assetPersistencePort = assetPersistencePort;
+    this.assetStoragePort = assetStoragePort;
     this.assetBucket = requireText(assetBucket, "assetBucket");
   }
 
@@ -34,6 +39,9 @@ public class AssetService implements AssetRegisterUseCase {
     ProjectId projectId = ProjectId.fromString(command.projectId());
     String originalFileName = resolveOriginalFileName(command);
     String storageKey = resolveStorageKey(projectId, command.requestedKey(), originalFileName);
+
+    assetStoragePort.store(StoreAssetCommand.from(
+        command.inputStream(), storageKey, command.contentType(), command.sizeBytes()));
 
     Asset registryAsset = assetPersistencePort.register(Asset.create(
         projectId,

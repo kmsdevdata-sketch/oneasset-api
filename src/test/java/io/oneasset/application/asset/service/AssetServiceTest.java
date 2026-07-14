@@ -9,19 +9,23 @@ import static org.mockito.Mockito.when;
 
 import io.oneasset.application.asset.command.RegisterAssetCommand;
 import io.oneasset.application.asset.required.AssetPersistencePort;
+import io.oneasset.application.asset.required.AssetStoragePort;
 import io.oneasset.application.asset.result.RegistryAsset;
 import io.oneasset.domain.asset.model.Asset;
 import io.oneasset.domain.asset.vo.AssetStatus;
 import io.oneasset.domain.project.vo.ProjectId;
 import io.oneasset.exception.BaseException;
 import io.oneasset.exception.code.CommonErrorCode;
+import java.io.ByteArrayInputStream;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
 class AssetServiceTest {
 
   private final AssetPersistencePort assetPersistencePort = mock(AssetPersistencePort.class);
-  private final AssetService assetService = new AssetService(assetPersistencePort, "test-bucket");
+  private final AssetStoragePort assetStoragePort = mock(AssetStoragePort.class);
+  private final AssetService assetService =
+      new AssetService(assetPersistencePort, assetStoragePort, "test-bucket");
 
   @Test
   void registersDeveloperAssetWithProjectScopedRequestedKey() {
@@ -30,7 +34,13 @@ class AssetServiceTest {
         .thenAnswer(invocation -> invocation.getArgument(0));
 
     RegistryAsset asset = assetService.register(new RegisterAssetCommand(
-        projectId.toString(), "users/123/profile.png", null, "avatar.png", "image/png", 1024));
+        projectId.toString(),
+        "users/123/profile.png",
+        null,
+        inputStream(),
+        "avatar.png",
+        "image/png",
+        1024));
 
     assertThat(asset.key()).isEqualTo("projects/" + projectId + "/users/123/profile.png");
     assertThat(asset.originalFileName()).isEqualTo("avatar.png");
@@ -51,7 +61,7 @@ class AssetServiceTest {
         .thenAnswer(invocation -> invocation.getArgument(0));
 
     RegistryAsset asset = assetService.register(new RegisterAssetCommand(
-        projectId.toString(), null, null, "profile.png", "image/png", 2048));
+        projectId.toString(), null, null, inputStream(), "profile.png", "image/png", 2048));
 
     assertThat(asset.key()).startsWith("projects/" + projectId + "/assets/");
     assertThat(asset.key()).endsWith(".png");
@@ -63,9 +73,19 @@ class AssetServiceTest {
     ProjectId projectId = ProjectId.newId();
 
     assertThatThrownBy(() -> assetService.register(new RegisterAssetCommand(
-            projectId.toString(), "../profile.png", null, "profile.png", "image/png", 1024)))
+            projectId.toString(),
+            "../profile.png",
+            null,
+            inputStream(),
+            "profile.png",
+            "image/png",
+            1024)))
         .isInstanceOf(BaseException.class)
         .extracting("errorCode")
         .isEqualTo(CommonErrorCode.INVALID_INPUT);
+  }
+
+  private ByteArrayInputStream inputStream() {
+    return new ByteArrayInputStream("asset".getBytes());
   }
 }
