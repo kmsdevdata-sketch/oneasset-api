@@ -3,11 +3,12 @@ package io.oneasset.application.asset.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.oneasset.application.asset.command.RegisterAssetCommand;
+import io.oneasset.application.asset.command.StoreAssetCommand;
 import io.oneasset.application.asset.required.AssetPersistencePort;
 import io.oneasset.application.asset.required.AssetStoragePort;
 import io.oneasset.application.asset.result.RegistryAsset;
@@ -19,6 +20,7 @@ import io.oneasset.exception.code.CommonErrorCode;
 import java.io.ByteArrayInputStream;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 
 class AssetServiceTest {
 
@@ -47,8 +49,19 @@ class AssetServiceTest {
     assertThat(asset.status()).isEqualTo(AssetStatus.UPLOADED.name());
     assertThat(asset.deliveryUrl()).isNull();
 
+    ArgumentCaptor<StoreAssetCommand> storeCommandCaptor =
+        ArgumentCaptor.forClass(StoreAssetCommand.class);
     ArgumentCaptor<Asset> assetCaptor = ArgumentCaptor.forClass(Asset.class);
-    verify(assetPersistencePort).register(assetCaptor.capture());
+    InOrder inOrder = inOrder(assetStoragePort, assetPersistencePort);
+    inOrder.verify(assetStoragePort).store(storeCommandCaptor.capture());
+    inOrder.verify(assetPersistencePort).register(assetCaptor.capture());
+
+    StoreAssetCommand storeCommand = storeCommandCaptor.getValue();
+    assertThat(storeCommand.storageKey())
+        .isEqualTo("projects/" + projectId + "/users/123/profile.png");
+    assertThat(storeCommand.contentType()).isEqualTo("image/png");
+    assertThat(storeCommand.sizeBytes()).isEqualTo(1024);
+
     Asset savedAsset = assetCaptor.getValue();
     assertThat(savedAsset.getUploadedBy()).isNull();
     assertThat(savedAsset.getBucket()).isEqualTo("test-bucket");
