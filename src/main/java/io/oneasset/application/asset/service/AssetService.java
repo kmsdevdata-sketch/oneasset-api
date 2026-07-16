@@ -14,6 +14,7 @@ import io.oneasset.domain.project.vo.ProjectId;
 import io.oneasset.exception.BaseException;
 import io.oneasset.exception.code.AssetErrorCode;
 import io.oneasset.exception.code.CommonErrorCode;
+import java.util.List;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -61,13 +62,36 @@ public class AssetService implements AssetRegisterUseCase, AssetUseCase {
   }
 
   @Override
+  @Transactional(readOnly = true)
   public RegistryAsset findByKeyAndProjectId(String key, ProjectId projectId) {
-    String storageKey = resolveProjectScopedStorageKey(projectId, key);
-    Asset findAsset = assetPersistencePort
-        .findActiveByStorageKeyAndProjectId(storageKey, projectId)
-        .orElseThrow(() -> new BaseException(AssetErrorCode.ASSET_NOT_FOUND));
+    Asset findAsset = findActiveByKeyAndProjectId(key, projectId);
 
     return RegistryAsset.from(findAsset, resolveDeliveryUrl(findAsset.getStorageKey()));
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public List<RegistryAsset> findAllByProjectId(ProjectId projectId) {
+    return assetPersistencePort.findAllActiveByProjectId(projectId).stream()
+        .map(asset -> RegistryAsset.from(asset, resolveDeliveryUrl(asset.getStorageKey())))
+        .toList();
+  }
+
+  @Override
+  @Transactional
+  public RegistryAsset deleteByKeyAndProjectId(String key, ProjectId projectId) {
+    Asset asset = findActiveByKeyAndProjectId(key, projectId);
+    asset.delete();
+    Asset deletedAsset = assetPersistencePort.save(asset);
+
+    return RegistryAsset.from(deletedAsset, resolveDeliveryUrl(deletedAsset.getStorageKey()));
+  }
+
+  private Asset findActiveByKeyAndProjectId(String key, ProjectId projectId) {
+    String storageKey = resolveProjectScopedStorageKey(projectId, key);
+    return assetPersistencePort
+        .findActiveByStorageKeyAndProjectId(storageKey, projectId)
+        .orElseThrow(() -> new BaseException(AssetErrorCode.ASSET_NOT_FOUND));
   }
 
   private String resolveOriginalFileName(RegisterAssetCommand command) {

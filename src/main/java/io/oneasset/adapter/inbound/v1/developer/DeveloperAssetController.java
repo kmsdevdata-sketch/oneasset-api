@@ -10,6 +10,7 @@ import io.oneasset.application.asset.provided.AssetUseCase;
 import io.oneasset.application.asset.result.RegistryAsset;
 import io.oneasset.domain.project.vo.ProjectId;
 import java.io.IOException;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
@@ -39,13 +40,37 @@ public class DeveloperAssetController {
     return ApiResponse.ok(AssetResponse.from(asset));
   }
 
-  @GetMapping
+  @GetMapping(params = "key")
   public ApiResponse<AssetResponse> detail(
       @RequestHeader("X-OneAsset-Api-Key") String rawKey,
       @RequestParam(value = "key", required = true) String key) {
     String projectId = apiKeyAuthenticationUseCase.authenticate(rawKey).projectId();
 
     RegistryAsset asset = assetUseCase.findByKeyAndProjectId(key, ProjectId.fromString(projectId));
+
+    return ApiResponse.ok(AssetResponse.from(asset));
+  }
+
+  @GetMapping(params = "!key")
+  public ApiResponse<List<AssetResponse>> list(@RequestHeader("X-OneAsset-Api-Key") String rawKey) {
+    String projectId = apiKeyAuthenticationUseCase.authenticate(rawKey).projectId();
+
+    List<AssetResponse> assets =
+        assetUseCase.findAllByProjectId(ProjectId.fromString(projectId)).stream()
+            .map(AssetResponse::from)
+            .toList();
+
+    return ApiResponse.ok(assets);
+  }
+
+  @DeleteMapping
+  public ApiResponse<AssetResponse> delete(
+      @RequestHeader("X-OneAsset-Api-Key") String rawKey,
+      @RequestParam(value = "key", required = true) String key) {
+    String projectId = apiKeyAuthenticationUseCase.authenticate(rawKey).projectId();
+
+    RegistryAsset asset =
+        assetUseCase.deleteByKeyAndProjectId(key, ProjectId.fromString(projectId));
 
     return ApiResponse.ok(AssetResponse.from(asset));
   }

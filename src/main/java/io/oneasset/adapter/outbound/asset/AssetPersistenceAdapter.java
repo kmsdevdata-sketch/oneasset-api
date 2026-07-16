@@ -20,6 +20,10 @@ public class AssetPersistenceAdapter implements AssetPersistencePort {
   private final AssetJpaRepository assetJpaRepository;
 
   public Asset register(Asset asset) {
+    return save(asset);
+  }
+
+  public Asset save(Asset asset) {
     return assetJpaRepository.save(AssetEntity.from(asset)).toDomain();
   }
 

@@ -18,6 +18,7 @@ import io.oneasset.domain.project.vo.ProjectId;
 import io.oneasset.exception.BaseException;
 import io.oneasset.exception.code.CommonErrorCode;
 import java.io.ByteArrayInputStream;
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -94,6 +95,57 @@ class AssetServiceTest {
 
     RegistryAsset asset = assetService.findByKeyAndProjectId("users/123/profile.png", projectId);
 
+    assertThat(asset.key()).isEqualTo(storageKey);
+    assertThat(asset.deliveryUrl()).isEqualTo("https://cdn.oneasset.test/" + storageKey);
+  }
+
+  @Test
+  void findsAllAssetsByProjectIdWithDeliveryUrls() {
+    ProjectId projectId = ProjectId.newId();
+    Asset firstAsset = Asset.create(
+        projectId,
+        null,
+        "profile.png",
+        "image/png",
+        2048,
+        "test-bucket",
+        "projects/" + projectId + "/users/123/profile.png");
+    Asset secondAsset = Asset.create(
+        projectId,
+        null,
+        "banner.jpg",
+        "image/jpeg",
+        4096,
+        "test-bucket",
+        "projects/" + projectId + "/users/123/banner.jpg");
+    when(assetPersistencePort.findAllActiveByProjectId(projectId))
+        .thenReturn(List.of(firstAsset, secondAsset));
+
+    List<RegistryAsset> assets = assetService.findAllByProjectId(projectId);
+
+    assertThat(assets).hasSize(2);
+    assertThat(assets.getFirst().key()).isEqualTo(firstAsset.getStorageKey());
+    assertThat(assets.getFirst().deliveryUrl())
+        .isEqualTo("https://cdn.oneasset.test/" + firstAsset.getStorageKey());
+    assertThat(assets.getLast().key()).isEqualTo(secondAsset.getStorageKey());
+    assertThat(assets.getLast().deliveryUrl())
+        .isEqualTo("https://cdn.oneasset.test/" + secondAsset.getStorageKey());
+  }
+
+  @Test
+  void softDeletesAssetWithProjectScopedRequestedKey() {
+    ProjectId projectId = ProjectId.newId();
+    String storageKey = "projects/" + projectId + "/users/123/profile.png";
+    Asset savedAsset =
+        Asset.create(projectId, null, "profile.png", "image/png", 2048, "test-bucket", storageKey);
+    when(assetPersistencePort.findActiveByStorageKeyAndProjectId(storageKey, projectId))
+        .thenReturn(Optional.of(savedAsset));
+    when(assetPersistencePort.save(any(Asset.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
+
+    RegistryAsset asset = assetService.deleteByKeyAndProjectId("users/123/profile.png", projectId);
+
+    assertThat(savedAsset.isDeleted()).isTrue();
     assertThat(asset.key()).isEqualTo(storageKey);
     assertThat(asset.deliveryUrl()).isEqualTo("https://cdn.oneasset.test/" + storageKey);
   }
