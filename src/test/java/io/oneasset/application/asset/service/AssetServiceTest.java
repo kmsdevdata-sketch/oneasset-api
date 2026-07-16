@@ -13,11 +13,15 @@ import io.oneasset.application.asset.command.StoreAssetCommand;
 import io.oneasset.application.asset.required.AssetPersistencePort;
 import io.oneasset.application.asset.required.AssetStoragePort;
 import io.oneasset.application.asset.result.RegistryAsset;
+import io.oneasset.application.project.required.ProjectPersistencePort;
 import io.oneasset.domain.asset.model.Asset;
 import io.oneasset.domain.asset.vo.AssetStatus;
 import io.oneasset.domain.project.vo.ProjectId;
+import io.oneasset.domain.projectmember.model.ProjectMember;
+import io.oneasset.domain.user.vo.UserId;
 import io.oneasset.exception.BaseException;
 import io.oneasset.exception.code.CommonErrorCode;
+import io.oneasset.exception.code.ProjectErrorCode;
 import java.io.ByteArrayInputStream;
 import java.util.List;
 import java.util.Optional;
@@ -29,8 +33,13 @@ class AssetServiceTest {
 
   private final AssetPersistencePort assetPersistencePort = mock(AssetPersistencePort.class);
   private final AssetStoragePort assetStoragePort = mock(AssetStoragePort.class);
+  private final ProjectPersistencePort projectPersistencePort = mock(ProjectPersistencePort.class);
   private final AssetService assetService = new AssetService(
-      assetPersistencePort, assetStoragePort, "test-bucket", "https://cdn.oneasset.test/");
+      assetPersistencePort,
+      assetStoragePort,
+      projectPersistencePort,
+      "test-bucket",
+      "https://cdn.oneasset.test/");
 
   @Test
   void registersDeveloperAssetWithProjectScopedRequestedKey() {
@@ -131,6 +140,41 @@ class AssetServiceTest {
     assertThat(assets.getLast().key()).isEqualTo(secondAsset.getStorageKey());
     assertThat(assets.getLast().deliveryUrl())
         .isEqualTo("https://cdn.oneasset.test/" + secondAsset.getStorageKey());
+  }
+
+  @Test
+  void findsAllAssetsAfterProjectMembershipCheck() {
+    UserId userId = UserId.newId();
+    ProjectId projectId = ProjectId.newId();
+    ProjectMember member = ProjectMember.createOwner(projectId, userId);
+    Asset savedAsset = Asset.create(
+        projectId,
+        null,
+        "profile.png",
+        "image/png",
+        2048,
+        "test-bucket",
+        "projects/" + projectId + "/users/123/profile.png");
+    when(projectPersistencePort.findMember(projectId, userId)).thenReturn(Optional.of(member));
+    when(assetPersistencePort.findAllActiveByProjectId(projectId)).thenReturn(List.of(savedAsset));
+
+    List<RegistryAsset> assets = assetService.findAll(userId, projectId.toString());
+
+    assertThat(assets).hasSize(1);
+    assertThat(assets.getFirst().key()).isEqualTo(savedAsset.getStorageKey());
+    verify(projectPersistencePort).findMember(projectId, userId);
+  }
+
+  @Test
+  void rejectsDashboardAssetAccessWhenUserIsNotProjectMember() {
+    UserId userId = UserId.newId();
+    ProjectId projectId = ProjectId.newId();
+    when(projectPersistencePort.findMember(projectId, userId)).thenReturn(Optional.empty());
+
+    assertThatThrownBy(() -> assetService.findAll(userId, projectId.toString()))
+        .isInstanceOf(BaseException.class)
+        .extracting("errorCode")
+        .isEqualTo(ProjectErrorCode.PROJECT_ACCESS_DENIED);
   }
 
   @Test

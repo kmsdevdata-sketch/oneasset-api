@@ -7,12 +7,15 @@ import static org.mockito.Mockito.when;
 
 import io.oneasset.adapter.inbound.auth.JwtCurrentUserExtractor;
 import io.oneasset.adapter.inbound.response.ApiResponse;
+import io.oneasset.adapter.inbound.v1.developer.response.AssetResponse;
 import io.oneasset.adapter.inbound.web.project.request.CreateApiKeyRequest;
 import io.oneasset.adapter.inbound.web.project.request.CreateProjectRequest;
 import io.oneasset.adapter.inbound.web.project.response.ApiKeyResponse;
 import io.oneasset.adapter.inbound.web.project.response.ProjectResponse;
 import io.oneasset.application.apikey.provided.ApiKeyUseCase;
 import io.oneasset.application.apikey.result.CreatedApiKey;
+import io.oneasset.application.asset.provided.AssetUseCase;
+import io.oneasset.application.asset.result.RegistryAsset;
 import io.oneasset.application.project.command.CreateProjectCommand;
 import io.oneasset.application.project.provided.ProjectUseCase;
 import io.oneasset.application.user.command.CurrentUser;
@@ -20,6 +23,7 @@ import io.oneasset.application.user.provided.UserSyncUseCase;
 import io.oneasset.domain.apikey.model.ApiKey;
 import io.oneasset.domain.apikey.vo.ApiKeyHash;
 import io.oneasset.domain.apikey.vo.ApiKeyPrefix;
+import io.oneasset.domain.asset.model.Asset;
 import io.oneasset.domain.project.model.Project;
 import io.oneasset.domain.user.model.User;
 import java.time.Instant;
@@ -32,10 +36,11 @@ class ProjectControllerTest {
   private final ProjectUseCase projectUseCase = mock(ProjectUseCase.class);
   private final UserSyncUseCase userSyncUseCase = mock(UserSyncUseCase.class);
   private final ApiKeyUseCase apiKeyUseCase = mock(ApiKeyUseCase.class);
+  private final AssetUseCase assetUseCase = mock(AssetUseCase.class);
   private final JwtCurrentUserExtractor jwtCurrentUserExtractor =
       mock(JwtCurrentUserExtractor.class);
   private final ProjectController projectController = new ProjectController(
-      projectUseCase, userSyncUseCase, apiKeyUseCase, jwtCurrentUserExtractor);
+      projectUseCase, userSyncUseCase, apiKeyUseCase, assetUseCase, jwtCurrentUserExtractor);
 
   @Test
   void createsProjectForCurrentUser() {
@@ -169,6 +174,76 @@ class ProjectControllerTest {
     assertThat(response.data().status()).isEqualTo("REVOKED");
     verify(apiKeyUseCase)
         .revoke(user.getId(), project.getId().toString(), apiKey.getId().toString());
+  }
+
+  @Test
+  void returnsCurrentUserProjectAssets() {
+    Jwt jwt = createJwt();
+    CurrentUser currentUser = new CurrentUser("cognito-sub-1", "user@example.com", "Minseo");
+    User user = User.createFromCognito("cognito-sub-1", "user@example.com", "Minseo");
+    Project project = Project.create("My Blog", "my-blog");
+    RegistryAsset asset = assetResult(project, "users/123/profile.png");
+    when(jwtCurrentUserExtractor.extract(jwt)).thenReturn(currentUser);
+    when(userSyncUseCase.findOrCreate(currentUser)).thenReturn(user);
+    when(assetUseCase.findAll(user.getId(), project.getId().toString())).thenReturn(List.of(asset));
+
+    ApiResponse<List<AssetResponse>> response =
+        projectController.listAssets(jwt, project.getId().toString());
+
+    assertThat(response.success()).isTrue();
+    assertThat(response.data()).hasSize(1);
+    assertThat(response.data().getFirst().key()).isEqualTo(asset.key());
+    verify(assetUseCase).findAll(user.getId(), project.getId().toString());
+  }
+
+  @Test
+  void returnsCurrentUserProjectAssetDetail() {
+    Jwt jwt = createJwt();
+    CurrentUser currentUser = new CurrentUser("cognito-sub-1", "user@example.com", "Minseo");
+    User user = User.createFromCognito("cognito-sub-1", "user@example.com", "Minseo");
+    Project project = Project.create("My Blog", "my-blog");
+    RegistryAsset asset = assetResult(project, "users/123/profile.png");
+    when(jwtCurrentUserExtractor.extract(jwt)).thenReturn(currentUser);
+    when(userSyncUseCase.findOrCreate(currentUser)).thenReturn(user);
+    when(assetUseCase.findByKey(user.getId(), project.getId().toString(), "users/123/profile.png"))
+        .thenReturn(asset);
+
+    ApiResponse<AssetResponse> response =
+        projectController.assetDetail(jwt, project.getId().toString(), "users/123/profile.png");
+
+    assertThat(response.success()).isTrue();
+    assertThat(response.data().key()).isEqualTo(asset.key());
+    verify(assetUseCase)
+        .findByKey(user.getId(), project.getId().toString(), "users/123/profile.png");
+  }
+
+  @Test
+  void deletesCurrentUserProjectAsset() {
+    Jwt jwt = createJwt();
+    CurrentUser currentUser = new CurrentUser("cognito-sub-1", "user@example.com", "Minseo");
+    User user = User.createFromCognito("cognito-sub-1", "user@example.com", "Minseo");
+    Project project = Project.create("My Blog", "my-blog");
+    RegistryAsset asset = assetResult(project, "users/123/profile.png");
+    when(jwtCurrentUserExtractor.extract(jwt)).thenReturn(currentUser);
+    when(userSyncUseCase.findOrCreate(currentUser)).thenReturn(user);
+    when(assetUseCase.deleteByKey(
+            user.getId(), project.getId().toString(), "users/123/profile.png"))
+        .thenReturn(asset);
+
+    ApiResponse<AssetResponse> response =
+        projectController.deleteAsset(jwt, project.getId().toString(), "users/123/profile.png");
+
+    assertThat(response.success()).isTrue();
+    assertThat(response.data().key()).isEqualTo(asset.key());
+    verify(assetUseCase)
+        .deleteByKey(user.getId(), project.getId().toString(), "users/123/profile.png");
+  }
+
+  private static RegistryAsset assetResult(Project project, String userKey) {
+    String storageKey = "projects/" + project.getId() + "/" + userKey;
+    Asset asset = Asset.create(
+        project.getId(), null, "profile.png", "image/png", 1024, "test-bucket", storageKey);
+    return RegistryAsset.from(asset, "https://cdn.oneasset.test/" + storageKey);
   }
 
   private static Jwt createJwt() {
