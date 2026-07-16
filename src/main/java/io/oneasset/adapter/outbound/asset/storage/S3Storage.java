@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 @Component
@@ -27,5 +28,12 @@ public class S3Storage {
 
     s3Client.putObject(
         putObjectRequest, RequestBody.fromInputStream(request.inputStream(), request.sizeBytes()));
+  }
+
+  public void delete(String storageKey) {
+    DeleteObjectRequest deleteObjectRequest =
+        DeleteObjectRequest.builder().bucket(bucket).key(storageKey).build();
+
+    s3Client.deleteObject(deleteObjectRequest);
   }
 }

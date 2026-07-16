@@ -5,4 +5,6 @@ import io.oneasset.application.asset.command.StoreAssetCommand;
 public interface AssetStoragePort {
 
   void store(StoreAssetCommand command);
+
+  void delete(String storageKey);
 }

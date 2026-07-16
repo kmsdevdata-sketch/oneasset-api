@@ -12,6 +12,7 @@ import org.mockito.ArgumentCaptor;
 import org.springframework.test.util.ReflectionTestUtils;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 class S3StorageTest {
@@ -39,5 +40,20 @@ class S3StorageTest {
     assertThat(putObjectRequest.key()).isEqualTo("projects/project-id/users/123/profile.png");
     assertThat(putObjectRequest.contentType()).isEqualTo("image/png");
     assertThat(putObjectRequest.contentLength()).isEqualTo(5);
+  }
+
+  @Test
+  void deletesObjectWithBucketAndKey() {
+    ReflectionTestUtils.setField(s3Storage, "bucket", "test-bucket");
+
+    s3Storage.delete("projects/project-id/users/123/profile.png");
+
+    ArgumentCaptor<DeleteObjectRequest> requestCaptor =
+        ArgumentCaptor.forClass(DeleteObjectRequest.class);
+    verify(s3Client).deleteObject(requestCaptor.capture());
+
+    DeleteObjectRequest deleteObjectRequest = requestCaptor.getValue();
+    assertThat(deleteObjectRequest.bucket()).isEqualTo("test-bucket");
+    assertThat(deleteObjectRequest.key()).isEqualTo("projects/project-id/users/123/profile.png");
   }
 }

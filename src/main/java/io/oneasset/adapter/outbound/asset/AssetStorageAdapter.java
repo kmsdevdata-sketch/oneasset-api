@@ -18,4 +18,9 @@ public class AssetStorageAdapter implements AssetStoragePort {
   public void store(StoreAssetCommand command) {
     s3Storage.store(AssetStoreRequest.from(command));
   }
+
+  @Override
+  public void delete(String storageKey) {
+    s3Storage.delete(storageKey);
+  }
 }

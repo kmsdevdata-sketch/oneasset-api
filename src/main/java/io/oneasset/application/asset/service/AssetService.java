@@ -81,6 +81,9 @@ public class AssetService implements AssetRegisterUseCase, AssetUseCase {
   @Transactional
   public RegistryAsset deleteByKeyAndProjectId(String key, ProjectId projectId) {
     Asset asset = findActiveByKeyAndProjectId(key, projectId);
+
+    assetStoragePort.delete(asset.getStorageKey());
+
     asset.delete();
     Asset deletedAsset = assetPersistencePort.save(asset);
 
