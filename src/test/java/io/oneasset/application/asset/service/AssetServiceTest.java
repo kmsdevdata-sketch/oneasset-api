@@ -56,7 +56,8 @@ class AssetServiceTest {
         "image/png",
         1024));
 
-    assertThat(asset.key()).isEqualTo("projects/" + projectId + "/users/123/profile.png");
+    assertThat(asset.key()).isEqualTo("users/123/profile.png");
+    assertThat(asset.storageKey()).isEqualTo("projects/" + projectId + "/users/123/profile.png");
     assertThat(asset.originalFileName()).isEqualTo("avatar.png");
     assertThat(asset.status()).isEqualTo(AssetStatus.UPLOADED.name());
     assertThat(asset.deliveryUrl())
@@ -89,8 +90,10 @@ class AssetServiceTest {
     RegistryAsset asset = assetService.register(new RegisterAssetCommand(
         projectId.toString(), null, null, inputStream(), "profile.png", "image/png", 2048));
 
-    assertThat(asset.key()).startsWith("projects/" + projectId + "/assets/");
+    assertThat(asset.key()).startsWith("assets/");
     assertThat(asset.key()).endsWith(".png");
+    assertThat(asset.storageKey()).startsWith("projects/" + projectId + "/assets/");
+    assertThat(asset.storageKey()).endsWith(".png");
     assertThat(asset.originalFileName()).isEqualTo("profile.png");
   }
 
@@ -105,7 +108,8 @@ class AssetServiceTest {
 
     RegistryAsset asset = assetService.findByKeyAndProjectId("users/123/profile.png", projectId);
 
-    assertThat(asset.key()).isEqualTo(storageKey);
+    assertThat(asset.key()).isEqualTo("users/123/profile.png");
+    assertThat(asset.storageKey()).isEqualTo(storageKey);
     assertThat(asset.deliveryUrl()).isEqualTo("https://cdn.oneasset.test/" + storageKey);
   }
 
@@ -134,10 +138,12 @@ class AssetServiceTest {
     List<RegistryAsset> assets = assetService.findAllByProjectId(projectId);
 
     assertThat(assets).hasSize(2);
-    assertThat(assets.getFirst().key()).isEqualTo(firstAsset.getStorageKey());
+    assertThat(assets.getFirst().key()).isEqualTo("users/123/profile.png");
+    assertThat(assets.getFirst().storageKey()).isEqualTo(firstAsset.getStorageKey());
     assertThat(assets.getFirst().deliveryUrl())
         .isEqualTo("https://cdn.oneasset.test/" + firstAsset.getStorageKey());
-    assertThat(assets.getLast().key()).isEqualTo(secondAsset.getStorageKey());
+    assertThat(assets.getLast().key()).isEqualTo("users/123/banner.jpg");
+    assertThat(assets.getLast().storageKey()).isEqualTo(secondAsset.getStorageKey());
     assertThat(assets.getLast().deliveryUrl())
         .isEqualTo("https://cdn.oneasset.test/" + secondAsset.getStorageKey());
   }
@@ -161,7 +167,8 @@ class AssetServiceTest {
     List<RegistryAsset> assets = assetService.findAll(userId, projectId.toString());
 
     assertThat(assets).hasSize(1);
-    assertThat(assets.getFirst().key()).isEqualTo(savedAsset.getStorageKey());
+    assertThat(assets.getFirst().key()).isEqualTo("users/123/profile.png");
+    assertThat(assets.getFirst().storageKey()).isEqualTo(savedAsset.getStorageKey());
     verify(projectPersistencePort).findMember(projectId, userId);
   }
 
@@ -191,7 +198,8 @@ class AssetServiceTest {
     RegistryAsset asset = assetService.deleteByKeyAndProjectId("users/123/profile.png", projectId);
 
     assertThat(savedAsset.isDeleted()).isTrue();
-    assertThat(asset.key()).isEqualTo(storageKey);
+    assertThat(asset.key()).isEqualTo("users/123/profile.png");
+    assertThat(asset.storageKey()).isEqualTo(storageKey);
     assertThat(asset.deliveryUrl()).isEqualTo("https://cdn.oneasset.test/" + storageKey);
     verify(assetStoragePort).delete(storageKey);
   }

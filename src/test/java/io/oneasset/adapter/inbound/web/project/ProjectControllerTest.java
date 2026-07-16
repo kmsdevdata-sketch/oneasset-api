@@ -193,6 +193,7 @@ class ProjectControllerTest {
     assertThat(response.success()).isTrue();
     assertThat(response.data()).hasSize(1);
     assertThat(response.data().getFirst().key()).isEqualTo(asset.key());
+    assertThat(response.data().getFirst().storageKey()).isEqualTo(asset.storageKey());
     verify(assetUseCase).findAll(user.getId(), project.getId().toString());
   }
 
@@ -213,6 +214,7 @@ class ProjectControllerTest {
 
     assertThat(response.success()).isTrue();
     assertThat(response.data().key()).isEqualTo(asset.key());
+    assertThat(response.data().storageKey()).isEqualTo(asset.storageKey());
     verify(assetUseCase)
         .findByKey(user.getId(), project.getId().toString(), "users/123/profile.png");
   }
@@ -235,6 +237,7 @@ class ProjectControllerTest {
 
     assertThat(response.success()).isTrue();
     assertThat(response.data().key()).isEqualTo(asset.key());
+    assertThat(response.data().storageKey()).isEqualTo(asset.storageKey());
     verify(assetUseCase)
         .deleteByKey(user.getId(), project.getId().toString(), "users/123/profile.png");
   }
