@@ -36,7 +36,7 @@ services:
 
     volumes:
       - .:/app
-      - ~/.aws:/root/.aws:ro
+      - ${HOME}/.aws:/root/.aws:ro
 
     environment:
       POSTGRES_HOST: ${POSTGRES_HOST}
@@ -45,10 +45,9 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       COGNITO_ISSUER_URI: ${COGNITO_ISSUER_URI}
-      AWS_PROFILE: oneasset-dev
-      AWS_REGION: ap-northeast-2
-      ONEASSET_ASSET_BUCKET: oneasset
+      AWS_PROFILE: ${AWS_PROFILE:-oneasset-dev}
+      AWS_REGION: ${AWS_REGION:-ap-northeast-2}
+      ONEASSET_ASSET_BUCKET: ${ONEASSET_ASSET_BUCKET:-oneasset}
 
 volumes:
   postgres-data:
-
