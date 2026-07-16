@@ -6,6 +6,8 @@ import org.springframework.http.HttpStatus;
 
 @Getter
 public enum AssetErrorCode implements ErrorCode {
+  ASSET_NOT_FOUND(
+      "ASSET_NOT_FOUND_404", "Asset not found", HttpStatus.NOT_FOUND, "/errors/assets/not-found"),
   INVALID_ASSET_STATUS_TRANSITION(
       "ASSET_INVALID_STATUS_TRANSITION_409",
       "Invalid asset status transition",

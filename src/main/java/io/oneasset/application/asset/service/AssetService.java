@@ -5,12 +5,14 @@ import static io.oneasset.domain.common.DomainValidator.requireText;
 import io.oneasset.application.asset.command.RegisterAssetCommand;
 import io.oneasset.application.asset.command.StoreAssetCommand;
 import io.oneasset.application.asset.provided.AssetRegisterUseCase;
+import io.oneasset.application.asset.provided.AssetUseCase;
 import io.oneasset.application.asset.required.AssetPersistencePort;
 import io.oneasset.application.asset.required.AssetStoragePort;
 import io.oneasset.application.asset.result.RegistryAsset;
 import io.oneasset.domain.asset.model.Asset;
 import io.oneasset.domain.project.vo.ProjectId;
 import io.oneasset.exception.BaseException;
+import io.oneasset.exception.code.AssetErrorCode;
 import io.oneasset.exception.code.CommonErrorCode;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Value;
@@ -18,7 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-public class AssetService implements AssetRegisterUseCase {
+public class AssetService implements AssetRegisterUseCase, AssetUseCase {
 
   private final AssetPersistencePort assetPersistencePort;
   private final AssetStoragePort assetStoragePort;
@@ -58,6 +60,16 @@ public class AssetService implements AssetRegisterUseCase {
     return RegistryAsset.from(registryAsset, resolveDeliveryUrl(storageKey));
   }
 
+  @Override
+  public RegistryAsset findByKeyAndProjectId(String key, ProjectId projectId) {
+    String storageKey = resolveProjectScopedStorageKey(projectId, key);
+    Asset findAsset = assetPersistencePort
+        .findActiveByStorageKeyAndProjectId(storageKey, projectId)
+        .orElseThrow(() -> new BaseException(AssetErrorCode.ASSET_NOT_FOUND));
+
+    return RegistryAsset.from(findAsset, resolveDeliveryUrl(findAsset.getStorageKey()));
+  }
+
   private String resolveOriginalFileName(RegisterAssetCommand command) {
     String fileName = firstText(command.requestedFileName(), command.multipartOriginalFileName());
     if (fileName == null) {
@@ -71,10 +83,18 @@ public class AssetService implements AssetRegisterUseCase {
       ProjectId projectId, String requestedKey, String originalFileName) {
     String normalizedRequestedKey = normalizeKey(requestedKey);
     if (normalizedRequestedKey != null) {
-      return "projects/" + projectId + "/" + normalizedRequestedKey;
+      return resolveProjectScopedStorageKey(projectId, normalizedRequestedKey);
     }
 
     return "projects/" + projectId + "/assets/" + UUID.randomUUID() + extensionOf(originalFileName);
+  }
+
+  private String resolveProjectScopedStorageKey(ProjectId projectId, String key) {
+    String normalizedKey = normalizeKey(key);
+    if (normalizedKey == null) {
+      throw new BaseException(CommonErrorCode.INVALID_INPUT, "key must not be blank");
+    }
+    return "projects/" + projectId + "/" + normalizedKey;
   }
 
   private String firstText(String first, String second) {

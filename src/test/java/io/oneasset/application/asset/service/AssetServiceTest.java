@@ -18,6 +18,7 @@ import io.oneasset.domain.project.vo.ProjectId;
 import io.oneasset.exception.BaseException;
 import io.oneasset.exception.code.CommonErrorCode;
 import java.io.ByteArrayInputStream;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
@@ -83,6 +84,21 @@ class AssetServiceTest {
   }
 
   @Test
+  void findsAssetWithProjectScopedRequestedKey() {
+    ProjectId projectId = ProjectId.newId();
+    String storageKey = "projects/" + projectId + "/users/123/profile.png";
+    Asset savedAsset =
+        Asset.create(projectId, null, "profile.png", "image/png", 2048, "test-bucket", storageKey);
+    when(assetPersistencePort.findActiveByStorageKeyAndProjectId(storageKey, projectId))
+        .thenReturn(Optional.of(savedAsset));
+
+    RegistryAsset asset = assetService.findByKeyAndProjectId("users/123/profile.png", projectId);
+
+    assertThat(asset.key()).isEqualTo(storageKey);
+    assertThat(asset.deliveryUrl()).isEqualTo("https://cdn.oneasset.test/" + storageKey);
+  }
+
+  @Test
   void rejectsUnsafeRequestedKeySegments() {
     ProjectId projectId = ProjectId.newId();
 
@@ -94,6 +110,16 @@ class AssetServiceTest {
             "profile.png",
             "image/png",
             1024)))
+        .isInstanceOf(BaseException.class)
+        .extracting("errorCode")
+        .isEqualTo(CommonErrorCode.INVALID_INPUT);
+  }
+
+  @Test
+  void rejectsUnsafeLookupKeySegments() {
+    ProjectId projectId = ProjectId.newId();
+
+    assertThatThrownBy(() -> assetService.findByKeyAndProjectId("../profile.png", projectId))
         .isInstanceOf(BaseException.class)
         .extracting("errorCode")
         .isEqualTo(CommonErrorCode.INVALID_INPUT);

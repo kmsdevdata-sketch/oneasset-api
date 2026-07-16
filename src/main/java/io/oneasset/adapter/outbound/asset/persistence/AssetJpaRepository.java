@@ -13,4 +13,7 @@ public interface AssetJpaRepository extends JpaRepository<AssetEntity, UUID> {
   Optional<AssetEntity> findByStorageKeyAndDeletedAtIsNull(String storageKey);
 
   List<AssetEntity> findAllByProjectIdAndDeletedAtIsNullOrderByCreatedAtDesc(UUID projectId);
+
+  Optional<AssetEntity> findByStorageKeyAndProjectIdAndDeletedAtIsNull(
+      String storageKey, UUID projectId);
 }

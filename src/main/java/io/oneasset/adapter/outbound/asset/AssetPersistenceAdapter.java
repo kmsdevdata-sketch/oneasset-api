@@ -29,6 +29,14 @@ public class AssetPersistenceAdapter implements AssetPersistencePort {
   }
 
   @Transactional(readOnly = true)
+  public Optional<Asset> findActiveByStorageKeyAndProjectId(
+      String storageKey, ProjectId projectId) {
+    return assetJpaRepository
+        .findByStorageKeyAndProjectIdAndDeletedAtIsNull(storageKey, projectId.value())
+        .map(AssetEntity::toDomain);
+  }
+
+  @Transactional(readOnly = true)
   public Optional<Asset> findActiveByStorageKey(String storageKey) {
     return assetJpaRepository
         .findByStorageKeyAndDeletedAtIsNull(storageKey)
