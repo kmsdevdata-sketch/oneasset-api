@@ -48,6 +48,7 @@ services:
       AWS_PROFILE: ${AWS_PROFILE:-oneasset-dev}
       AWS_REGION: ${AWS_REGION:-ap-northeast-2}
       ONEASSET_ASSET_BUCKET: ${ONEASSET_ASSET_BUCKET:-oneasset}
+      ONEASSET_DELIVERY_BASE_URL: ${ONEASSET_DELIVERY_BASE_URL:-}
 
 volumes:
   postgres-data:

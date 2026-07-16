@@ -26,8 +26,8 @@ class AssetServiceTest {
 
   private final AssetPersistencePort assetPersistencePort = mock(AssetPersistencePort.class);
   private final AssetStoragePort assetStoragePort = mock(AssetStoragePort.class);
-  private final AssetService assetService =
-      new AssetService(assetPersistencePort, assetStoragePort, "test-bucket");
+  private final AssetService assetService = new AssetService(
+      assetPersistencePort, assetStoragePort, "test-bucket", "https://cdn.oneasset.test/");
 
   @Test
   void registersDeveloperAssetWithProjectScopedRequestedKey() {
@@ -47,7 +47,8 @@ class AssetServiceTest {
     assertThat(asset.key()).isEqualTo("projects/" + projectId + "/users/123/profile.png");
     assertThat(asset.originalFileName()).isEqualTo("avatar.png");
     assertThat(asset.status()).isEqualTo(AssetStatus.UPLOADED.name());
-    assertThat(asset.deliveryUrl()).isNull();
+    assertThat(asset.deliveryUrl())
+        .isEqualTo("https://cdn.oneasset.test/projects/" + projectId + "/users/123/profile.png");
 
     ArgumentCaptor<StoreAssetCommand> storeCommandCaptor =
         ArgumentCaptor.forClass(StoreAssetCommand.class);

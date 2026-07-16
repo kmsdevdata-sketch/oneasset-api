@@ -47,6 +47,7 @@ oneasset:
   storage:
     asset-bucket: ${ONEASSET_ASSET_BUCKET:oneasset}
     region: ${AWS_REGION:ap-northeast-2}
+    delivery-base-url: ${ONEASSET_DELIVERY_BASE_URL:}
 
 app:
   cors:

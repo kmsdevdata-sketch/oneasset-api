@@ -23,14 +23,17 @@ public class AssetService implements AssetRegisterUseCase {
   private final AssetPersistencePort assetPersistencePort;
   private final AssetStoragePort assetStoragePort;
   private final String assetBucket;
+  private final String deliveryBaseUrl;
 
   public AssetService(
       AssetPersistencePort assetPersistencePort,
       AssetStoragePort assetStoragePort,
-      @Value("${oneasset.storage.asset-bucket:local-oneasset-assets}") String assetBucket) {
+      @Value("${oneasset.storage.asset-bucket:local-oneasset-assets}") String assetBucket,
+      @Value("${oneasset.storage.delivery-base-url:}") String deliveryBaseUrl) {
     this.assetPersistencePort = assetPersistencePort;
     this.assetStoragePort = assetStoragePort;
     this.assetBucket = requireText(assetBucket, "assetBucket");
+    this.deliveryBaseUrl = normalizeDeliveryBaseUrl(deliveryBaseUrl);
   }
 
   @Override
@@ -52,7 +55,7 @@ public class AssetService implements AssetRegisterUseCase {
         assetBucket,
         storageKey));
 
-    return RegistryAsset.from(registryAsset);
+    return RegistryAsset.from(registryAsset, resolveDeliveryUrl(storageKey));
   }
 
   private String resolveOriginalFileName(RegisterAssetCommand command) {
@@ -117,5 +120,24 @@ public class AssetService implements AssetRegisterUseCase {
       return "";
     }
     return fileName.substring(lastDot);
+  }
+
+  private String normalizeDeliveryBaseUrl(String baseUrl) {
+    if (baseUrl == null || baseUrl.isBlank()) {
+      return null;
+    }
+
+    String normalized = baseUrl.trim();
+    while (normalized.endsWith("/")) {
+      normalized = normalized.substring(0, normalized.length() - 1);
+    }
+    return normalized.isBlank() ? null : normalized;
+  }
+
+  private String resolveDeliveryUrl(String storageKey) {
+    if (deliveryBaseUrl == null) {
+      return null;
+    }
+    return deliveryBaseUrl + "/" + storageKey;
   }
 }

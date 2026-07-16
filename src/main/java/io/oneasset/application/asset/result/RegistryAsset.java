@@ -14,6 +14,10 @@ public record RegistryAsset(
     LocalDateTime createdAt) {
 
   public static RegistryAsset from(Asset asset) {
+    return from(asset, null);
+  }
+
+  public static RegistryAsset from(Asset asset, String deliveryUrl) {
     return new RegistryAsset(
         asset.getId().toString(),
         asset.getStorageKey(),
@@ -21,7 +25,7 @@ public record RegistryAsset(
         asset.getContentType(),
         asset.getSizeBytes(),
         asset.getStatus().name(),
-        null,
+        deliveryUrl,
         asset.getCreatedAt());
   }
 }
