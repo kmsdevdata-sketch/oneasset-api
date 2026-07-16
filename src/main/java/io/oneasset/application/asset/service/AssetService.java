@@ -9,11 +9,14 @@ import io.oneasset.application.asset.provided.AssetUseCase;
 import io.oneasset.application.asset.required.AssetPersistencePort;
 import io.oneasset.application.asset.required.AssetStoragePort;
 import io.oneasset.application.asset.result.RegistryAsset;
+import io.oneasset.application.project.required.ProjectPersistencePort;
 import io.oneasset.domain.asset.model.Asset;
 import io.oneasset.domain.project.vo.ProjectId;
+import io.oneasset.domain.user.vo.UserId;
 import io.oneasset.exception.BaseException;
 import io.oneasset.exception.code.AssetErrorCode;
 import io.oneasset.exception.code.CommonErrorCode;
+import io.oneasset.exception.code.ProjectErrorCode;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Value;
@@ -25,16 +28,19 @@ public class AssetService implements AssetRegisterUseCase, AssetUseCase {
 
   private final AssetPersistencePort assetPersistencePort;
   private final AssetStoragePort assetStoragePort;
+  private final ProjectPersistencePort projectPersistencePort;
   private final String assetBucket;
   private final String deliveryBaseUrl;
 
   public AssetService(
       AssetPersistencePort assetPersistencePort,
       AssetStoragePort assetStoragePort,
+      ProjectPersistencePort projectPersistencePort,
       @Value("${oneasset.storage.asset-bucket:local-oneasset-assets}") String assetBucket,
       @Value("${oneasset.storage.delivery-base-url:}") String deliveryBaseUrl) {
     this.assetPersistencePort = assetPersistencePort;
     this.assetStoragePort = assetStoragePort;
+    this.projectPersistencePort = projectPersistencePort;
     this.assetBucket = requireText(assetBucket, "assetBucket");
     this.deliveryBaseUrl = normalizeDeliveryBaseUrl(deliveryBaseUrl);
   }
@@ -88,6 +94,39 @@ public class AssetService implements AssetRegisterUseCase, AssetUseCase {
     Asset deletedAsset = assetPersistencePort.save(asset);
 
     return RegistryAsset.from(deletedAsset, resolveDeliveryUrl(deletedAsset.getStorageKey()));
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public RegistryAsset findByKey(UserId userId, String projectIdValue, String key) {
+    ProjectId projectId = ProjectId.fromString(projectIdValue);
+    ensureProjectMember(projectId, userId);
+
+    return findByKeyAndProjectId(key, projectId);
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public List<RegistryAsset> findAll(UserId userId, String projectIdValue) {
+    ProjectId projectId = ProjectId.fromString(projectIdValue);
+    ensureProjectMember(projectId, userId);
+
+    return findAllByProjectId(projectId);
+  }
+
+  @Override
+  @Transactional
+  public RegistryAsset deleteByKey(UserId userId, String projectIdValue, String key) {
+    ProjectId projectId = ProjectId.fromString(projectIdValue);
+    ensureProjectMember(projectId, userId);
+
+    return deleteByKeyAndProjectId(key, projectId);
+  }
+
+  private void ensureProjectMember(ProjectId projectId, UserId userId) {
+    projectPersistencePort
+        .findMember(projectId, userId)
+        .orElseThrow(() -> new BaseException(ProjectErrorCode.PROJECT_ACCESS_DENIED));
   }
 
   private Asset findActiveByKeyAndProjectId(String key, ProjectId projectId) {

@@ -2,12 +2,15 @@ package io.oneasset.adapter.inbound.web.project;
 
 import io.oneasset.adapter.inbound.auth.JwtCurrentUserExtractor;
 import io.oneasset.adapter.inbound.response.ApiResponse;
+import io.oneasset.adapter.inbound.v1.developer.response.AssetResponse;
 import io.oneasset.adapter.inbound.web.project.request.CreateApiKeyRequest;
 import io.oneasset.adapter.inbound.web.project.request.CreateProjectRequest;
 import io.oneasset.adapter.inbound.web.project.response.ApiKeyResponse;
 import io.oneasset.adapter.inbound.web.project.response.ProjectResponse;
 import io.oneasset.application.apikey.provided.ApiKeyUseCase;
 import io.oneasset.application.apikey.result.CreatedApiKey;
+import io.oneasset.application.asset.provided.AssetUseCase;
+import io.oneasset.application.asset.result.RegistryAsset;
 import io.oneasset.application.project.provided.ProjectUseCase;
 import io.oneasset.application.user.command.CurrentUser;
 import io.oneasset.application.user.provided.UserSyncUseCase;
@@ -30,6 +33,7 @@ public class ProjectController {
   private final ProjectUseCase projectUseCase;
   private final UserSyncUseCase userSyncUseCase;
   private final ApiKeyUseCase apiKeyUseCase;
+  private final AssetUseCase assetUseCase;
   private final JwtCurrentUserExtractor jwtCurrentUserExtractor;
 
   @PostMapping
@@ -90,6 +94,39 @@ public class ProjectController {
     ApiKey apiKey = apiKeyUseCase.revoke(user.getId(), projectId, apiKeyId);
 
     return ApiResponse.ok(ApiKeyResponse.from(apiKey));
+  }
+
+  @GetMapping(value = "/{projectId}/assets", params = "!key")
+  public ApiResponse<List<AssetResponse>> listAssets(
+      @AuthenticationPrincipal Jwt jwt, @PathVariable String projectId) {
+    User user = currentUser(jwt);
+    List<AssetResponse> response = assetUseCase.findAll(user.getId(), projectId).stream()
+        .map(AssetResponse::from)
+        .toList();
+
+    return ApiResponse.ok(response);
+  }
+
+  @GetMapping(value = "/{projectId}/assets", params = "key")
+  public ApiResponse<AssetResponse> assetDetail(
+      @AuthenticationPrincipal Jwt jwt,
+      @PathVariable String projectId,
+      @RequestParam(value = "key", required = true) String key) {
+    User user = currentUser(jwt);
+    RegistryAsset asset = assetUseCase.findByKey(user.getId(), projectId, key);
+
+    return ApiResponse.ok(AssetResponse.from(asset));
+  }
+
+  @DeleteMapping("/{projectId}/assets")
+  public ApiResponse<AssetResponse> deleteAsset(
+      @AuthenticationPrincipal Jwt jwt,
+      @PathVariable String projectId,
+      @RequestParam(value = "key", required = true) String key) {
+    User user = currentUser(jwt);
+    RegistryAsset asset = assetUseCase.deleteByKey(user.getId(), projectId, key);
+
+    return ApiResponse.ok(AssetResponse.from(asset));
   }
 
   private User currentUser(Jwt jwt) {
