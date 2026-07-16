@@ -64,16 +64,17 @@ projects/8e06f161-e93d-4a17-8ae8-15f2cfeb353a/users/123/profile.png
 
 The backend creates this value from the authenticated project id and the user key. Clients should not manually construct the `projects/{projectId}` prefix when uploading, querying, or deleting through key-based APIs.
 
-### Current Response Note
+### Response Contract
 
-In the current MVP1 response, the `key` field contains the full storage key.
+In the current MVP1 response, `key` contains the user key and `storageKey` contains the full S3 object key.
 
 Example:
 
 ```json
 {
   "assetId": "asset-id",
-  "key": "projects/8e06f161-e93d-4a17-8ae8-15f2cfeb353a/users/123/profile.png",
+  "key": "users/123/profile.png",
+  "storageKey": "projects/8e06f161-e93d-4a17-8ae8-15f2cfeb353a/users/123/profile.png",
   "originalFileName": "profile.png",
   "contentType": "image/png",
   "sizeBytes": 12345,
@@ -83,13 +84,6 @@ Example:
 }
 ```
 
-For UI rendering, the frontend should strip the project prefix:
-
-```text
-projects/{projectId}/users/123/profile.png
--> users/123/profile.png
-```
-
 For follow-up key-based Developer API calls, send the user key:
 
 ```text
@@ -97,8 +91,6 @@ users/123/profile.png
 ```
 
 not the full storage key.
-
-Later API cleanup may split this explicitly into `key` and `storageKey`.
 
 ## Dashboard Asset List Contract
 

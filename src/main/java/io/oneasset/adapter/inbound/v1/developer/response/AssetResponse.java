@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 public record AssetResponse(
     String assetId,
     String key,
+    String storageKey,
     String originalFileName,
     String contentType,
     long sizeBytes,
@@ -16,6 +17,7 @@ public record AssetResponse(
     return new AssetResponse(
         asset.id(),
         asset.key(),
+        asset.storageKey(),
         asset.originalFileName(),
         asset.contentType(),
         asset.sizeBytes(),
