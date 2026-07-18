@@ -5,7 +5,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
-import io.oneasset.adapter.outbound.asset.AssetStoreRequest;
+import io.oneasset.adapter.outbound.asset.request.AssetStoreRequest;
 import java.io.ByteArrayInputStream;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;

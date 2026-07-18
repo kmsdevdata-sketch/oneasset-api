@@ -8,9 +8,11 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import io.oneasset.application.asset.command.EnqueueAssetProcessingCommand;
 import io.oneasset.application.asset.command.RegisterAssetCommand;
 import io.oneasset.application.asset.command.StoreAssetCommand;
 import io.oneasset.application.asset.required.AssetPersistencePort;
+import io.oneasset.application.asset.required.AssetProcessingQueuePort;
 import io.oneasset.application.asset.required.AssetStoragePort;
 import io.oneasset.application.asset.result.RegistryAsset;
 import io.oneasset.application.project.required.ProjectPersistencePort;
@@ -34,10 +36,13 @@ class AssetServiceTest {
   private final AssetPersistencePort assetPersistencePort = mock(AssetPersistencePort.class);
   private final AssetStoragePort assetStoragePort = mock(AssetStoragePort.class);
   private final ProjectPersistencePort projectPersistencePort = mock(ProjectPersistencePort.class);
+  private final AssetProcessingQueuePort assetProcessingQueuePort =
+      mock(AssetProcessingQueuePort.class);
   private final AssetService assetService = new AssetService(
       assetPersistencePort,
       assetStoragePort,
       projectPersistencePort,
+      assetProcessingQueuePort,
       "test-bucket",
       "https://cdn.oneasset.test/");
 
@@ -65,10 +70,13 @@ class AssetServiceTest {
 
     ArgumentCaptor<StoreAssetCommand> storeCommandCaptor =
         ArgumentCaptor.forClass(StoreAssetCommand.class);
+    ArgumentCaptor<EnqueueAssetProcessingCommand> enqueueCommandCaptor =
+        ArgumentCaptor.forClass(EnqueueAssetProcessingCommand.class);
     ArgumentCaptor<Asset> assetCaptor = ArgumentCaptor.forClass(Asset.class);
     InOrder inOrder = inOrder(assetStoragePort, assetPersistencePort);
     inOrder.verify(assetStoragePort).store(storeCommandCaptor.capture());
     inOrder.verify(assetPersistencePort).register(assetCaptor.capture());
+    verify(assetProcessingQueuePort).enqueue(enqueueCommandCaptor.capture());
 
     StoreAssetCommand storeCommand = storeCommandCaptor.getValue();
     assertThat(storeCommand.storageKey())
@@ -79,6 +87,15 @@ class AssetServiceTest {
     Asset savedAsset = assetCaptor.getValue();
     assertThat(savedAsset.getUploadedBy()).isNull();
     assertThat(savedAsset.getBucket()).isEqualTo("test-bucket");
+
+    EnqueueAssetProcessingCommand enqueueCommand = enqueueCommandCaptor.getValue();
+    assertThat(enqueueCommand.assetId()).isEqualTo(savedAsset.getId().toString());
+    assertThat(enqueueCommand.projectId()).isEqualTo(projectId.toString());
+    assertThat(enqueueCommand.bucket()).isEqualTo("test-bucket");
+    assertThat(enqueueCommand.storageKey())
+        .isEqualTo("projects/" + projectId + "/users/123/profile.png");
+    assertThat(enqueueCommand.contentType()).isEqualTo("image/png");
+    assertThat(enqueueCommand.sizeBytes()).isEqualTo(1024);
   }
 
   @Test
