@@ -65,7 +65,10 @@ dependencies {
     // =========================
     // AWS
     // =========================
-    implementation("io.awspring.cloud:spring-cloud-aws-starter-s3:4.0.2")
+    implementation(platform("io.awspring.cloud:spring-cloud-aws-dependencies:4.0.2"))
+
+    implementation("io.awspring.cloud:spring-cloud-aws-starter-s3")
+    implementation("io.awspring.cloud:spring-cloud-aws-starter-sqs")
 }
 
 tasks.withType<Test> {

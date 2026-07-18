@@ -1,5 +1,6 @@
 package io.oneasset.adapter.outbound.asset;
 
+import io.oneasset.adapter.outbound.asset.request.AssetStoreRequest;
 import io.oneasset.adapter.outbound.asset.storage.S3Storage;
 import io.oneasset.application.asset.command.StoreAssetCommand;
 import io.oneasset.application.asset.required.AssetStoragePort;

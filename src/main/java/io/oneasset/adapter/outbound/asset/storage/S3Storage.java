@@ -1,6 +1,6 @@
 package io.oneasset.adapter.outbound.asset.storage;
 
-import io.oneasset.adapter.outbound.asset.AssetStoreRequest;
+import io.oneasset.adapter.outbound.asset.request.AssetStoreRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;

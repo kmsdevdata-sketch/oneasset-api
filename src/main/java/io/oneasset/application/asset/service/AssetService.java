@@ -2,11 +2,13 @@ package io.oneasset.application.asset.service;
 
 import static io.oneasset.domain.common.DomainValidator.requireText;
 
+import io.oneasset.application.asset.command.EnqueueAssetProcessingCommand;
 import io.oneasset.application.asset.command.RegisterAssetCommand;
 import io.oneasset.application.asset.command.StoreAssetCommand;
 import io.oneasset.application.asset.provided.AssetRegisterUseCase;
 import io.oneasset.application.asset.provided.AssetUseCase;
 import io.oneasset.application.asset.required.AssetPersistencePort;
+import io.oneasset.application.asset.required.AssetProcessingQueuePort;
 import io.oneasset.application.asset.required.AssetStoragePort;
 import io.oneasset.application.asset.result.RegistryAsset;
 import io.oneasset.application.project.required.ProjectPersistencePort;
@@ -29,6 +31,7 @@ public class AssetService implements AssetRegisterUseCase, AssetUseCase {
   private final AssetPersistencePort assetPersistencePort;
   private final AssetStoragePort assetStoragePort;
   private final ProjectPersistencePort projectPersistencePort;
+  private final AssetProcessingQueuePort assetProcessingQueuePort;
   private final String assetBucket;
   private final String deliveryBaseUrl;
 
@@ -36,11 +39,13 @@ public class AssetService implements AssetRegisterUseCase, AssetUseCase {
       AssetPersistencePort assetPersistencePort,
       AssetStoragePort assetStoragePort,
       ProjectPersistencePort projectPersistencePort,
+      AssetProcessingQueuePort assetProcessingQueuePort,
       @Value("${oneasset.storage.asset-bucket:local-oneasset-assets}") String assetBucket,
       @Value("${oneasset.storage.delivery-base-url:}") String deliveryBaseUrl) {
     this.assetPersistencePort = assetPersistencePort;
     this.assetStoragePort = assetStoragePort;
     this.projectPersistencePort = projectPersistencePort;
+    this.assetProcessingQueuePort = assetProcessingQueuePort;
     this.assetBucket = requireText(assetBucket, "assetBucket");
     this.deliveryBaseUrl = normalizeDeliveryBaseUrl(deliveryBaseUrl);
   }
@@ -63,6 +68,14 @@ public class AssetService implements AssetRegisterUseCase, AssetUseCase {
         command.sizeBytes(),
         assetBucket,
         storageKey));
+
+    assetProcessingQueuePort.enqueue(EnqueueAssetProcessingCommand.from(
+        registryAsset.getId(),
+        projectId,
+        assetBucket,
+        storageKey,
+        registryAsset.getContentType(),
+        registryAsset.getSizeBytes()));
 
     return RegistryAsset.from(registryAsset, resolveDeliveryUrl(storageKey));
   }

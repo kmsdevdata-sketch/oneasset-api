@@ -1,4 +1,4 @@
-package io.oneasset.adapter.outbound.asset;
+package io.oneasset.adapter.outbound.asset.request;
 
 import io.oneasset.application.asset.command.StoreAssetCommand;
 import java.io.InputStream;
