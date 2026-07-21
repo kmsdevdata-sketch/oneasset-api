@@ -5,19 +5,24 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.oneasset.application.asset.command.EnqueueAssetProcessingCommand;
 import io.oneasset.application.asset.command.RegisterAssetCommand;
+import io.oneasset.application.asset.command.RegisterAssetVariantCommand;
 import io.oneasset.application.asset.command.StoreAssetCommand;
 import io.oneasset.application.asset.required.AssetPersistencePort;
 import io.oneasset.application.asset.required.AssetProcessingQueuePort;
 import io.oneasset.application.asset.required.AssetStoragePort;
+import io.oneasset.application.asset.required.AssetVariantPersistencePort;
 import io.oneasset.application.asset.result.RegistryAsset;
 import io.oneasset.application.project.required.ProjectPersistencePort;
 import io.oneasset.domain.asset.model.Asset;
 import io.oneasset.domain.asset.vo.AssetStatus;
+import io.oneasset.domain.assetvariant.model.AssetVariant;
+import io.oneasset.domain.assetvariant.vo.AssetVariantType;
 import io.oneasset.domain.project.vo.ProjectId;
 import io.oneasset.domain.projectmember.model.ProjectMember;
 import io.oneasset.domain.user.vo.UserId;
@@ -38,11 +43,14 @@ class AssetServiceTest {
   private final ProjectPersistencePort projectPersistencePort = mock(ProjectPersistencePort.class);
   private final AssetProcessingQueuePort assetProcessingQueuePort =
       mock(AssetProcessingQueuePort.class);
+  private final AssetVariantPersistencePort assetVariantPersistencePort =
+      mock(AssetVariantPersistencePort.class);
   private final AssetService assetService = new AssetService(
       assetPersistencePort,
       assetStoragePort,
       projectPersistencePort,
       assetProcessingQueuePort,
+      assetVariantPersistencePort,
       "test-bucket",
       "https://cdn.oneasset.test/");
 
@@ -64,7 +72,7 @@ class AssetServiceTest {
     assertThat(asset.key()).isEqualTo("users/123/profile.png");
     assertThat(asset.storageKey()).isEqualTo("projects/" + projectId + "/users/123/profile.png");
     assertThat(asset.originalFileName()).isEqualTo("avatar.png");
-    assertThat(asset.status()).isEqualTo(AssetStatus.UPLOADED.name());
+    assertThat(asset.status()).isEqualTo(AssetStatus.PROCESSING.name());
     assertThat(asset.deliveryUrl())
         .isEqualTo("https://cdn.oneasset.test/projects/" + projectId + "/users/123/profile.png");
 
@@ -87,6 +95,7 @@ class AssetServiceTest {
     Asset savedAsset = assetCaptor.getValue();
     assertThat(savedAsset.getUploadedBy()).isNull();
     assertThat(savedAsset.getBucket()).isEqualTo("test-bucket");
+    assertThat(savedAsset.getStatus()).isEqualTo(AssetStatus.PROCESSING);
 
     EnqueueAssetProcessingCommand enqueueCommand = enqueueCommandCaptor.getValue();
     assertThat(enqueueCommand.assetId()).isEqualTo(savedAsset.getId().toString());
@@ -246,6 +255,86 @@ class AssetServiceTest {
         .isInstanceOf(BaseException.class)
         .extracting("errorCode")
         .isEqualTo(CommonErrorCode.INVALID_INPUT);
+  }
+
+  @Test
+  void registersProcessedAssetVariantAndMarksAssetReady() {
+    ProjectId projectId = ProjectId.newId();
+    Asset asset = Asset.create(
+        projectId,
+        null,
+        "profile.png",
+        "image/png",
+        2048,
+        "test-bucket",
+        "projects/" + projectId + "/users/123/profile.png");
+    asset.markProcessing();
+    when(assetPersistencePort.findActiveById(asset.getId())).thenReturn(Optional.of(asset));
+    when(assetVariantPersistencePort.findByStorageKey(
+            "projects/" + projectId + "/users/123/variants/profile-w512.webp"))
+        .thenReturn(Optional.empty());
+    when(assetVariantPersistencePort.save(any(AssetVariant.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
+    when(assetPersistencePort.save(any(Asset.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
+
+    assetService.completeVariantProcessing(
+        asset.getId().toString(),
+        new RegisterAssetVariantCommand(
+            AssetVariantType.WEBP,
+            "test-bucket",
+            "projects/" + projectId + "/users/123/variants/profile-w512.webp",
+            "image/webp",
+            1024,
+            512,
+            512));
+
+    assertThat(asset.getStatus()).isEqualTo(AssetStatus.READY);
+    verify(assetVariantPersistencePort).save(any(AssetVariant.class));
+    verify(assetPersistencePort).save(asset);
+  }
+
+  @Test
+  void treatsDuplicateProcessedVariantCallbackAsSuccessful() {
+    ProjectId projectId = ProjectId.newId();
+    Asset asset = Asset.create(
+        projectId,
+        null,
+        "profile.png",
+        "image/png",
+        2048,
+        "test-bucket",
+        "projects/" + projectId + "/users/123/profile.png");
+    asset.markProcessing();
+    AssetVariant existingVariant = AssetVariant.create(
+        asset.getId(),
+        AssetVariantType.WEBP,
+        "image/webp",
+        1024,
+        "test-bucket",
+        "projects/" + projectId + "/users/123/variants/profile-w512.webp",
+        512,
+        512);
+    when(assetPersistencePort.findActiveById(asset.getId())).thenReturn(Optional.of(asset));
+    when(assetVariantPersistencePort.findByStorageKey(existingVariant.getStorageKey()))
+        .thenReturn(Optional.of(existingVariant));
+    when(assetPersistencePort.save(any(Asset.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
+
+    assetService.completeVariantProcessing(
+        asset.getId().toString(),
+        new RegisterAssetVariantCommand(
+            AssetVariantType.WEBP,
+            "test-bucket",
+            existingVariant.getStorageKey(),
+            "image/webp",
+            1024,
+            512,
+            512));
+
+    assertThat(asset.getStatus()).isEqualTo(AssetStatus.READY);
+    verify(assetVariantPersistencePort, never()).save(any(AssetVariant.class));
+    verify(assetPersistencePort).save(asset);
   }
 
   private ByteArrayInputStream inputStream() {

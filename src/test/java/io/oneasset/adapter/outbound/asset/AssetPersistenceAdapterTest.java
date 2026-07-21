@@ -38,7 +38,7 @@ class AssetPersistenceAdapterTest {
     when(assetJpaRepository.findByIdAndDeletedAtIsNull(asset.getId().value()))
         .thenReturn(Optional.of(AssetEntity.from(asset)));
 
-    Optional<Asset> found = adapter.findActiveById(asset.getId().value());
+    Optional<Asset> found = adapter.findActiveById(asset.getId());
 
     assertThat(found).isPresent();
     assertThat(found.get().getId()).isEqualTo(asset.getId());

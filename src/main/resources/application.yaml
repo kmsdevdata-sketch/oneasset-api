@@ -50,6 +50,8 @@ oneasset:
     delivery-base-url: ${ONEASSET_DELIVERY_BASE_URL:}
   queue:
     asset-processing-url: ${ONEASSET_ASSET_PROCESSING_QUEUE_URL:}
+  processor:
+    callback-token: ${ONEASSET_PROCESSOR_CALLBACK_TOKEN:}
 
 app:
   cors:

@@ -1,9 +1,10 @@
 package io.oneasset.config;
 
 import io.oneasset.config.cors.AppCorsProperties;
+import io.oneasset.config.token.TokenProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-@EnableConfigurationProperties(AppCorsProperties.class)
+@EnableConfigurationProperties({AppCorsProperties.class, TokenProperties.class})
 public class PropertiesConfig {}

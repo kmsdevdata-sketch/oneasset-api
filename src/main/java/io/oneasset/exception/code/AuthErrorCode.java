@@ -15,7 +15,12 @@ public enum AuthErrorCode implements ErrorCode {
       "AUTH_INVALID_API_KEY_401",
       "Invalid API key",
       HttpStatus.UNAUTHORIZED,
-      "/errors/auth/invalid-api-key");
+      "/errors/auth/invalid-api-key"),
+  INVALID_PROCESSOR_CALLBACK_TOKEN(
+      "AUTH_INVALID_PROCESSOR_CALLBACK_TOKEN_401",
+      "Invalid processor callback token",
+      HttpStatus.UNAUTHORIZED,
+      "/errors/auth/invalid-processor-callback-token");
 
   private final String code;
   private final String title;

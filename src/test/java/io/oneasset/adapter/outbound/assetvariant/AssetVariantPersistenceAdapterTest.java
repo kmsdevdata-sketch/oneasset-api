@@ -25,9 +25,12 @@ class AssetVariantPersistenceAdapterTest {
   @Test
   void savesAssetVariantEntityConvertedFromDomain() {
     AssetVariant variant = createVariant();
+    when(assetVariantJpaRepository.save(any(AssetVariantEntity.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
 
-    adapter.save(variant);
+    AssetVariant savedVariant = adapter.save(variant);
 
+    assertThat(savedVariant.getId()).isEqualTo(variant.getId());
     verify(assetVariantJpaRepository).save(any(AssetVariantEntity.class));
   }
 

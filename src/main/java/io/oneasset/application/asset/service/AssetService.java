@@ -4,15 +4,20 @@ import static io.oneasset.domain.common.DomainValidator.requireText;
 
 import io.oneasset.application.asset.command.EnqueueAssetProcessingCommand;
 import io.oneasset.application.asset.command.RegisterAssetCommand;
+import io.oneasset.application.asset.command.RegisterAssetVariantCommand;
 import io.oneasset.application.asset.command.StoreAssetCommand;
+import io.oneasset.application.asset.provided.AssetProcessingCallbackUseCase;
 import io.oneasset.application.asset.provided.AssetRegisterUseCase;
 import io.oneasset.application.asset.provided.AssetUseCase;
 import io.oneasset.application.asset.required.AssetPersistencePort;
 import io.oneasset.application.asset.required.AssetProcessingQueuePort;
 import io.oneasset.application.asset.required.AssetStoragePort;
+import io.oneasset.application.asset.required.AssetVariantPersistencePort;
 import io.oneasset.application.asset.result.RegistryAsset;
 import io.oneasset.application.project.required.ProjectPersistencePort;
 import io.oneasset.domain.asset.model.Asset;
+import io.oneasset.domain.asset.vo.AssetId;
+import io.oneasset.domain.assetvariant.model.AssetVariant;
 import io.oneasset.domain.project.vo.ProjectId;
 import io.oneasset.domain.user.vo.UserId;
 import io.oneasset.exception.BaseException;
@@ -26,12 +31,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-public class AssetService implements AssetRegisterUseCase, AssetUseCase {
+public class AssetService
+    implements AssetRegisterUseCase, AssetUseCase, AssetProcessingCallbackUseCase {
 
   private final AssetPersistencePort assetPersistencePort;
   private final AssetStoragePort assetStoragePort;
   private final ProjectPersistencePort projectPersistencePort;
   private final AssetProcessingQueuePort assetProcessingQueuePort;
+  private final AssetVariantPersistencePort assetVariantPersistencePort;
   private final String assetBucket;
   private final String deliveryBaseUrl;
 
@@ -40,12 +47,14 @@ public class AssetService implements AssetRegisterUseCase, AssetUseCase {
       AssetStoragePort assetStoragePort,
       ProjectPersistencePort projectPersistencePort,
       AssetProcessingQueuePort assetProcessingQueuePort,
+      AssetVariantPersistencePort assetVariantPersistencePort,
       @Value("${oneasset.storage.asset-bucket:local-oneasset-assets}") String assetBucket,
       @Value("${oneasset.storage.delivery-base-url:}") String deliveryBaseUrl) {
     this.assetPersistencePort = assetPersistencePort;
     this.assetStoragePort = assetStoragePort;
     this.projectPersistencePort = projectPersistencePort;
     this.assetProcessingQueuePort = assetProcessingQueuePort;
+    this.assetVariantPersistencePort = assetVariantPersistencePort;
     this.assetBucket = requireText(assetBucket, "assetBucket");
     this.deliveryBaseUrl = normalizeDeliveryBaseUrl(deliveryBaseUrl);
   }
@@ -60,14 +69,16 @@ public class AssetService implements AssetRegisterUseCase, AssetUseCase {
     assetStoragePort.store(StoreAssetCommand.from(
         command.inputStream(), storageKey, command.contentType(), command.sizeBytes()));
 
-    Asset registryAsset = assetPersistencePort.register(Asset.create(
+    Asset asset = Asset.create(
         projectId,
         null,
         originalFileName,
         command.contentType(),
         command.sizeBytes(),
         assetBucket,
-        storageKey));
+        storageKey);
+    asset.markProcessing();
+    Asset registryAsset = assetPersistencePort.register(asset);
 
     assetProcessingQueuePort.enqueue(EnqueueAssetProcessingCommand.from(
         registryAsset.getId(),
@@ -78,6 +89,32 @@ public class AssetService implements AssetRegisterUseCase, AssetUseCase {
         registryAsset.getSizeBytes()));
 
     return RegistryAsset.from(registryAsset, resolveDeliveryUrl(storageKey));
+  }
+
+  @Override
+  @Transactional
+  public void completeVariantProcessing(String assetId, RegisterAssetVariantCommand command) {
+    AssetId parsedAssetId = AssetId.fromString(assetId);
+    Asset asset = assetPersistencePort
+        .findActiveById(parsedAssetId)
+        .orElseThrow(() -> new BaseException(AssetErrorCode.ASSET_NOT_FOUND));
+
+    if (assetVariantPersistencePort.findByStorageKey(command.storageKey()).isEmpty()) {
+      assetVariantPersistencePort.save(AssetVariant.create(
+          parsedAssetId,
+          command.type(),
+          command.contentType(),
+          command.sizeBytes(),
+          command.bucket(),
+          command.storageKey(),
+          command.width(),
+          command.height()));
+    }
+
+    if (!asset.isReady()) {
+      asset.markReady();
+      assetPersistencePort.save(asset);
+    }
   }
 
   @Override

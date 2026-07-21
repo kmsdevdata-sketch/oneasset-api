@@ -4,10 +4,10 @@ import io.oneasset.adapter.outbound.asset.entity.AssetEntity;
 import io.oneasset.adapter.outbound.asset.persistence.AssetJpaRepository;
 import io.oneasset.application.asset.required.AssetPersistencePort;
 import io.oneasset.domain.asset.model.Asset;
+import io.oneasset.domain.asset.vo.AssetId;
 import io.oneasset.domain.project.vo.ProjectId;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,9 +27,12 @@ public class AssetPersistenceAdapter implements AssetPersistencePort {
     return assetJpaRepository.save(AssetEntity.from(asset)).toDomain();
   }
 
+  @Override
   @Transactional(readOnly = true)
-  public Optional<Asset> findActiveById(UUID assetId) {
-    return assetJpaRepository.findByIdAndDeletedAtIsNull(assetId).map(AssetEntity::toDomain);
+  public Optional<Asset> findActiveById(AssetId assetId) {
+    return assetJpaRepository
+        .findByIdAndDeletedAtIsNull(assetId.value())
+        .map(AssetEntity::toDomain);
   }
 
   @Transactional(readOnly = true)
