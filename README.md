@@ -1,157 +1,92 @@
 # OneAsset API
 
-OneAsset is a cloud-native asset platform for developers who want to upload images, manage asset metadata, and serve files through stable delivery URLs without building the storage and delivery pipeline themselves.
+[![Java 21](https://img.shields.io/badge/Java-21-007396)](https://www.oracle.com/java/)
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.1-6DB33F)](https://spring.io/projects/spring-boot)
+[![AWS](https://img.shields.io/badge/AWS-ECS%20%7C%20S3%20%7C%20SQS%20%7C%20Lambda-FF9900)](https://aws.amazon.com/)
 
-The backend has two API surfaces:
+[한국어](./README.ko.md)
 
-- Dashboard API: used by the OneAsset web dashboard with Cognito JWT authentication.
-- Developer API: used by external applications with project-scoped API keys.
+OneAsset API is the backend for a cloud-native asset platform. It lets a project issue API keys, upload image assets, store originals in private S3, process variants asynchronously, and serve stable delivery URLs through CloudFront.
 
-## Current Stage: MVP1
+The current repository is focused on the backend API and the MVP1 cloud pipeline.
 
-MVP1 focuses on proving the core asset upload, storage, delivery, and management flow.
+## Status
 
-Current flow:
+MVP1 is complete.
+
+The implemented flow proves:
+
+- Project-scoped API key issuance and validation
+- Multipart asset upload through the Developer API
+- Private S3 original storage
+- PostgreSQL metadata persistence
+- SQS-based asynchronous processing
+- Lambda image variant generation with `sharp`
+- Internal processor callback into Spring Boot
+- CloudFront delivery through OAC-protected S3 access
+- ECS on EC2 deployment behind an ALB
+- GitHub Actions deployment to ECR and ECS
+
+## Architecture
+
+```mermaid
+flowchart LR
+    Client["Dashboard / Developer App"]
+    Cloudflare["Cloudflare DNS / TLS"]
+    ALB["Application Load Balancer"]
+    ECS["ECS on EC2"]
+    API["Spring Boot API"]
+    DB["RDS PostgreSQL"]
+    S3["Private S3 Bucket"]
+    SQS["SQS Processing Queue"]
+    Lambda["Lambda Processor"]
+    CF["CloudFront Delivery"]
+
+    Client --> Cloudflare --> ALB --> ECS --> API
+    API --> DB
+    API --> S3
+    API --> SQS
+    SQS --> Lambda
+    Lambda --> S3
+    Lambda --> API
+    CF --> S3
+    Client --> CF
+```
+
+### Asset Processing Flow
 
 ```text
-Dashboard user creates a project
--> Dashboard user issues an API key
--> Developer app uploads an asset with X-OneAsset-Api-Key
--> OneAsset stores the original file in private S3
--> OneAsset stores asset metadata in PostgreSQL
--> CloudFront serves the asset through OAC-protected S3 access
--> Developer API can query, list, and delete project-scoped assets
+POST /v1/assets
+-> store original object in S3
+-> save Asset as PROCESSING
+-> publish processing message to SQS
+-> Lambda creates a WebP variant
+-> Lambda stores the variant in S3
+-> Lambda calls /internal/assets/{assetId}/variants
+-> Spring saves AssetVariant
+-> Asset becomes READY
 ```
 
-MVP1 is intentionally narrow. The goal is to prove that project-scoped API keys can drive a real asset workflow with private storage and public delivery through CloudFront.
+## API Surface
 
-## Asset Key Contract
+OneAsset has two API surfaces.
 
-OneAsset separates the user-facing asset key from the internal S3 storage key.
+| Surface | Authentication | Purpose |
+| --- | --- | --- |
+| Dashboard API | Cognito JWT | User, project, and API key management |
+| Developer API | `X-OneAsset-Api-Key` | External application asset upload and lookup |
+| Internal API | Processor callback token | Lambda-to-API processing callbacks |
 
-### User Key
-
-The user key is the path supplied by the API caller.
-
-Example:
-
-```text
-users/123/profile.png
-```
-
-Rules:
-
-- Do not include a leading slash.
-- Do not include empty path segments.
-- Do not use `.` or `..` path segments.
-- Use `/` as the logical folder separator.
-
-### Storage Key
-
-The storage key is the actual S3 object key.
-
-Format:
-
-```text
-projects/{projectId}/{userKey}
-```
-
-Example:
-
-```text
-projects/8e06f161-e93d-4a17-8ae8-15f2cfeb353a/users/123/profile.png
-```
-
-The backend creates this value from the authenticated project id and the user key. Clients should not manually construct the `projects/{projectId}` prefix when uploading, querying, or deleting through key-based APIs.
-
-### Response Contract
-
-In the current MVP1 response, `key` contains the user key and `storageKey` contains the full S3 object key.
-
-Example:
-
-```json
-{
-  "assetId": "asset-id",
-  "key": "users/123/profile.png",
-  "storageKey": "projects/8e06f161-e93d-4a17-8ae8-15f2cfeb353a/users/123/profile.png",
-  "originalFileName": "profile.png",
-  "contentType": "image/png",
-  "sizeBytes": 12345,
-  "status": "UPLOADED",
-  "deliveryUrl": "https://dxxxxx.cloudfront.net/projects/8e06f161-e93d-4a17-8ae8-15f2cfeb353a/users/123/profile.png",
-  "createdAt": "2026-07-16T14:00:00"
-}
-```
-
-For follow-up key-based Developer API calls, send the user key:
-
-```text
-users/123/profile.png
-```
-
-not the full storage key.
-
-## Dashboard Asset List Contract
-
-The backend should return a flat asset list. The frontend is responsible for rendering a tree by splitting the user key with `/`.
-
-Backend response shape:
-
-```text
-[
-  asset,
-  asset,
-  asset
-]
-```
-
-Frontend tree example:
-
-```text
-users/123/profile.png
-users/123/banner.png
-products/iphone/main.png
-```
-
-Render as:
-
-```text
-users
-  123
-    profile.png
-    banner.png
-products
-  iphone
-    main.png
-```
-
-Rationale:
-
-- The API stays simple and flexible.
-- The frontend can choose list, tree, search, or grouped views without backend changes.
-- The backend remains responsible for project scoping and key validation, not presentation structure.
-
-Dashboard APIs should use Cognito JWT authentication. The dashboard must not send raw project API keys from the browser.
-
-## Developer API
-
-Developer API requests use:
-
-```text
-X-OneAsset-Api-Key: {raw_api_key}
-```
-
-Current asset endpoints:
+### Developer Asset API
 
 ```text
 POST   /v1/assets
-GET    /v1/assets?key={userKey}
 GET    /v1/assets
+GET    /v1/assets?key={userKey}
 DELETE /v1/assets?key={userKey}
 ```
 
-Upload uses multipart form data:
+Upload requests use `multipart/form-data`.
 
 ```text
 file: File
@@ -159,86 +94,135 @@ key: users/123/profile.png
 fileName: profile.png optional
 ```
 
-Delete behavior:
+## Asset Key Model
+
+Clients work with a project-local user key:
 
 ```text
-DELETE /v1/assets?key={userKey}
--> deletes the S3 object
--> records deletedAt in PostgreSQL
--> active detail/list queries no longer return the asset
+users/123/profile.png
 ```
 
-CloudFront cache may continue serving a deleted object briefly until cache expiry. Explicit invalidation is a later operational feature.
-
-## Storage And Delivery
-
-Current storage and delivery model:
+The backend stores objects under a project-scoped S3 key:
 
 ```text
-S3 bucket: private origin storage
-CloudFront: public delivery entrypoint
-OAC: allows only the CloudFront distribution to read S3 objects
+projects/{projectId}/users/123/profile.png
 ```
 
-Direct S3 object access should be blocked. CloudFront URL access should work.
-
-Runtime environment variables:
+Generated variants are stored next to the original under a `variants` directory:
 
 ```text
-AWS_PROFILE=oneasset-dev
-AWS_REGION=ap-northeast-2
-ONEASSET_ASSET_BUCKET=oneasset
-ONEASSET_DELIVERY_BASE_URL=https://dxxxxx.cloudfront.net
+projects/{projectId}/users/123/variants/profile-w512.webp
 ```
 
-## Architecture Direction
+This keeps the public API stable while allowing storage layout and delivery policy to evolve.
 
-The backend follows a lightweight hexagonal structure:
+## Tech Stack
 
-```text
-adapter -> application -> domain
-```
-
-Domain models hold business rules. Application services coordinate use cases and transaction boundaries. Adapters handle HTTP, persistence, and external systems such as S3, CloudFront-facing delivery configuration, Cognito, and later SQS/Lambda.
-
-## MVP2 Direction
-
-MVP2 turns the basic flow into something usable by a small team or early user.
-
-Planned focus:
-
-- Dashboard asset management APIs with Cognito JWT and project membership checks.
-- Explicit `key` and `storageKey` response separation.
-- SQS/Lambda processing pipeline for variants, resizing, and failure handling.
-- Processing status visibility and retry-friendly state.
-- API key usage tracking and safer operational behavior.
-- Basic usage statistics per project.
-
-## MVP3 Direction
-
-MVP3 moves toward service readiness.
-
-Planned focus:
-
-- Stable deployment and environment separation.
-- More formal observability with logs, metrics, and alerts.
-- Rate limiting and abuse protection.
-- Usage-based limits or billing groundwork.
-- Better documentation for external developers.
+| Area | Technology |
+| --- | --- |
+| Language | Java 21 |
+| Framework | Spring Boot 4.1 |
+| Security | Spring Security, Cognito JWT, hashed API keys |
+| Persistence | PostgreSQL, JPA, Flyway |
+| Storage | Amazon S3 |
+| Async | Amazon SQS, AWS Lambda |
+| Delivery | CloudFront with Origin Access Control |
+| Runtime | Docker, ECS on EC2, ALB |
+| CI/CD | GitHub Actions, ECR, ECS task definition revision |
 
 ## Local Development
 
-Useful commands:
+### Requirements
 
-```bash
-./gradlew compileJava
-./gradlew test
-./gradlew spotlessApply
-./gradlew spotlessCheck
+- Java 21
+- Docker and Docker Compose
+- AWS profile for S3/SQS-backed development
+
+### Run Locally
+
+Create a local `.env` file.
+
+```text
+APP_PORT=8080
+POSTGRES_HOST=postgres
+POSTGRES_PORT=5432
+POSTGRES_DB=oneasset
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=postgres
+COGNITO_ISSUER_URI={cognito_issuer_uri}
+AWS_PROFILE=oneasset-dev
+AWS_REGION=ap-northeast-2
+ONEASSET_ASSET_BUCKET={bucket_name}
+ONEASSET_DELIVERY_BASE_URL={cloudfront_base_url}
+ONEASSET_ASSET_PROCESSING_QUEUE_URL={sqs_queue_url}
+ONEASSET_PROCESSOR_CALLBACK_TOKEN={local_callback_token}
 ```
 
-Docker local run:
+Start the app and PostgreSQL:
 
 ```bash
 docker compose up --build
 ```
+
+Useful checks:
+
+```bash
+./gradlew test
+./gradlew compileJava
+./gradlew spotlessCheck
+```
+
+## Deployment
+
+Deployment is handled by GitHub Actions on `main`.
+
+```text
+push to main
+-> run tests and build bootJar
+-> build linux/amd64 Docker image
+-> push image to ECR
+-> register a new ECS task definition revision
+-> update ECS service
+-> wait for service stability
+```
+
+Runtime infrastructure is currently configured as:
+
+```text
+Cloudflare
+-> ALB
+-> ECS on EC2
+-> Spring Boot
+-> RDS / S3 / SQS
+-> Lambda processor
+-> CloudFront delivery
+```
+
+## Lessons Captured
+
+The MVP1 build surfaced several production-shaped problems:
+
+- ECS task placement depends on enabled ALB Availability Zones.
+- Private subnet tasks need outbound access for Cognito metadata and AWS APIs.
+- Lambda defaults, especially timeout, are too small for image processing.
+- Processor callback authentication must be configured on both Lambda and ECS.
+- RDS security groups should allow the actual task/service security group, not a broad default group.
+
+These findings are being folded into the next infrastructure cleanup pass.
+
+## Roadmap
+
+MVP2 focus:
+
+- Dashboard asset browser with tree rendering by asset key
+- Multiple variant types and processing options
+- Processing failure visibility and DLQ recovery workflow
+- Cleaner secret management with AWS Secrets Manager or Parameter Store
+- Infrastructure-as-code for repeatable environments
+
+MVP3 focus:
+
+- Stronger environment separation
+- Deployment downtime reduction
+- Usage limits, abuse protection, and operational metrics
+- Public developer documentation
